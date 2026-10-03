@@ -8,7 +8,8 @@ import teamData from '../../../team.json';
 const society = teamData.society ?? [];
 const administration = teamData.administration ?? [];
 const facultyCoordinators = teamData.faculty_coordinator ?? [];
-const core = teamData.core;
+const hiddenLeadRoles = new Set(['marketing lead', 'design lead', 'creative lead']);
+const core = teamData.core.filter((member) => !hiddenLeadRoles.has(member.role.trim().toLowerCase()));
 const president = core.find((member) => member.role.toLowerCase() === 'president');
 const vicePresident = core.find((member) => {
   const role = member.role.toLowerCase();
