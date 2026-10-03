@@ -436,8 +436,6 @@ const eventTitle = event?.title ?? 'Event';
 </style>
 
 <script>
-  import { supabase } from '../../../lib/supabase.js';
-
   const loadingState = document.getElementById('loading-state');
   const errorState = document.getElementById('error-state');
   const ticketState = document.getElementById('ticket-state');
@@ -499,19 +497,36 @@ const eventTitle = event?.title ?? 'Event';
     .split(',')
     .map((id) => id.trim())
     .filter(Boolean);
+  const accessKey = `ecell-ticket-access:${ticketIds.join(',')}`;
+  let accessToken: string | null = null;
+  try {
+    accessToken = sessionStorage.getItem(accessKey);
+  } catch {
+    // The URL fragment fallback below supports browsers with blocked storage.
+  }
+  if (!accessToken && window.location.hash.startsWith('#access=')) {
+    try {
+      accessToken = decodeURIComponent(window.location.hash.slice('#access='.length));
+      sessionStorage.setItem(accessKey, accessToken);
+    } catch {
+      // Keep the short-lived fallback token only for this page load.
+    }
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+  }
 
-  if (ticketIds.length === 0) {
+  if (ticketIds.length === 0 || !accessToken) {
     showError();
   } else {
     try {
-    const { data: registrations, error } = await withTimeout(
-      supabase
-        .from('registrations')
-        .select('name, email, phone, ticket_id, team_name, events (title, date, time, venue, whatsapp_group_link)')
-        .in('ticket_id', ticketIds)
-    );
+    const ticketResponse = await withTimeout(fetch('/api/registration-tickets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken }),
+    }));
+    const ticketResult = await ticketResponse.json();
+    const registrations = ticketResponse.ok ? ticketResult.registrations : null;
 
-    if (error || !registrations || registrations.length === 0) {
+    if (!registrations || registrations.length === 0) {
       showError();
     } else {
       loadingState?.classList.add('hidden');
@@ -600,7 +615,7 @@ const eventTitle = event?.title ?? 'Event';
         const response = await fetch('/api/send-ticket-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ticketIds }),
+          body: JSON.stringify({ accessToken }),
         });
         const result = await response.json();
         if (response.ok && result.sent?.length) {

@@ -5,16 +5,19 @@ import ConsoleLayout from '../../layouts/ConsoleLayout.astro';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { getRegistrationStatus } from '../../lib/eventStatus.js';
 
-const { data: events, error } = await supabaseAdmin
-  .from('events')
-  .select('id, title, slug, date, status, registration_open, registration_deadline, max_participants, is_team_event')
-  .order('date', { ascending: false });
-
-const { data: registrationRows } = await supabaseAdmin.from('registrations').select('event_id');
+const [eventsResult, countsResult] = await Promise.all([
+  supabaseAdmin
+    .from('events')
+    .select('id, title, slug, date, status, registration_open, registration_deadline, max_participants, is_team_event')
+    .order('date', { ascending: false }),
+  supabaseAdmin.rpc('get_event_registration_counts'),
+]);
+const { data: events, error } = eventsResult;
+const { data: registrationCounts } = countsResult;
 
 const countsByEvent = new Map<string, number>();
-for (const row of registrationRows ?? []) {
-  countsByEvent.set(row.event_id, (countsByEvent.get(row.event_id) ?? 0) + 1);
+for (const row of registrationCounts ?? []) {
+  countsByEvent.set(row.event_id, Number(row.registered_count));
 }
 ---
 

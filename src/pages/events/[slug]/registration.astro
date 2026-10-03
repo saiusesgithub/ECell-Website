@@ -8,21 +8,22 @@ import { getRegistrationStatus, getRegistrationStatusLabel } from '../../../lib/
 export const prerender = false;
 
 const { slug } = Astro.params;
-const { data: event, error } = await supabase.from('events').select('*').eq('slug', slug).single();
+const [eventResult, countsResult] = await Promise.all([
+  supabase.from('events').select('*').eq('slug', slug).single(),
+  supabase.rpc('get_event_registration_counts'),
+]);
+const { data: event, error } = eventResult;
+const { data: registrationCounts, error: countError } = countsResult;
 
 if (error || !event) {
   console.error('Failed to load event:', error?.message ?? `No event found for slug ${slug}`);
   return Astro.redirect('/events');
 }
 
-const { count: registrationCount, error: countError } = await supabase
-  .from('registrations')
-  .select('id', { count: 'exact', head: true })
-  .eq('event_id', event.id);
-
 if (countError) {
   console.error('Failed to load registration count:', countError.message);
 }
+const registrationCount = Number(registrationCounts?.find((row) => row.event_id === event.id)?.registered_count ?? 0);
 
 const formattedDate = new Date(event.date).toLocaleDateString('en-IN', {
   day: 'numeric',
@@ -1255,7 +1256,14 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       return;
     }
 
-    const ticketIds = (inserted ?? []).map((row) => row.ticket_id).join(',');
-    window.location.href = `/events/${eventSlug}/confirmation?tickets=${ticketIds}`;
+    const ticketIds = (inserted ?? []).map((row) => row.ticket_id).filter(Boolean);
+    const ticketList = ticketIds.join(',');
+    let fallbackFragment = '';
+    try {
+      sessionStorage.setItem(`ecell-ticket-access:${ticketList}`, result.accessToken);
+    } catch {
+      fallbackFragment = `#access=${encodeURIComponent(result.accessToken)}`;
+    }
+    window.location.href = `/events/${eventSlug}/confirmation?tickets=${ticketList}${fallbackFragment}`;
   });
 </script>

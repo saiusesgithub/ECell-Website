@@ -3,8 +3,15 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { generateTicketsPdfBytes } from '../../lib/ticketPdf.js';
+import { verifyTicketAccessToken } from '../../lib/ticketAccess.js';
 
 const MAILEROO_ENDPOINT = 'https://smtp.maileroo.com/api/v2/emails';
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+  });
 
 function buildEmailHtml(registration: any) {
   const event = registration.events ?? {};
@@ -55,19 +62,23 @@ export const POST: APIRoute = async ({ request }) => {
   const fromName = import.meta.env.MAILEROO_FROM_NAME || 'E-Cell VJIT';
 
   if (!maillerooApiKey || !fromAddress) {
-    return new Response(JSON.stringify({ error: 'Email sending is not configured.' }), { status: 500 });
+    return json({ error: 'Email sending is not configured.' }, 500);
   }
 
-  let ticketIds: string[];
+  let body: any;
   try {
-    const body = await request.json();
-    ticketIds = Array.isArray(body.ticketIds) ? body.ticketIds.filter(Boolean) : [];
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > 20 * 1024) {
+      return json({ error: 'Email request is too large.' }, 413);
+    }
+    body = JSON.parse(rawBody);
   } catch {
-    return new Response(JSON.stringify({ error: 'Invalid request body.' }), { status: 400 });
+    return json({ error: 'Invalid request body.' }, 400);
   }
 
-  if (ticketIds.length === 0) {
-    return new Response(JSON.stringify({ error: 'No ticket IDs provided.' }), { status: 400 });
+  const ticketIds = verifyTicketAccessToken(body?.accessToken);
+  if (!ticketIds) {
+    return json({ error: 'Ticket access has expired or is invalid.' }, 401);
   }
 
   const { data: registrations, error } = await supabaseAdmin
@@ -76,7 +87,7 @@ export const POST: APIRoute = async ({ request }) => {
     .in('ticket_id', ticketIds);
 
   if (error || !registrations) {
-    return new Response(JSON.stringify({ error: 'Could not load registrations.' }), { status: 500 });
+    return json({ error: 'Could not load registrations.' }, 500);
   }
 
   const baseUrl = new URL(request.url).origin;
@@ -131,8 +142,5 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
 
-  return new Response(JSON.stringify(results), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return json(results);
 };

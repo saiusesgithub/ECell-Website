@@ -2,6 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
+import { createTicketAccessToken } from '../../lib/ticketAccess.js';
 
 const MAX_REQUEST_BYTES = 256 * 1024;
 const MAX_ATTENDEES = 100;
@@ -10,7 +11,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 
 const optionalText = (value: unknown, field: string, maxLength = 200) => {
@@ -121,5 +122,6 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'Could not complete registration.' }, 500);
   }
 
-  return json({ registrations });
+  const ticketIds = (registrations ?? []).map((registration: { ticket_id: string }) => registration.ticket_id);
+  return json({ registrations, accessToken: createTicketAccessToken(ticketIds) });
 };

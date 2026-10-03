@@ -149,25 +149,19 @@ registration per email per event).
 Public registration batches are inserted through `register_event_batch(uuid, jsonb)`. The migration
 drops the previous anonymous insert policy so requests cannot bypass the API. The function locks the
 event row while it checks registration state and capacity, then inserts the full batch in the same
-transaction. Its execute grant is limited to `service_role`. The public events listing uses
+transaction. Its execute grant is limited to `service_role`. Event pages and the console use
 `get_event_registration_counts()` to retrieve aggregate counts without transferring registration rows.
-Both functions are created by [`20261003000000_atomic_event_registration.sql`](../supabase/migrations/20261003000000_atomic_event_registration.sql).
+The functions are created by [`20261003000000_atomic_event_registration.sql`](../supabase/migrations/20261003000000_atomic_event_registration.sql).
 
-**RLS:** enabled, 1 policy —
-
-| Policy | Command | Roles | Condition |
-|---|---|---|---|
-| `Public can view registrations` | `SELECT` | `anon, authenticated` | `true` — **unrestricted read of every column on every row** |
-
-> ⚠️ **See [Security notes](#security-notes) — this SELECT policy is a live PII exposure.** Flagged
-> during this documentation pass, not yet remediated (tracked, fix not applied per explicit decision to
-> document first).
+**RLS:** enabled, 0 public policies after applying
+[`20261004000000_private_registration_reads.sql`](../supabase/migrations/20261004000000_private_registration_reads.sql).
 
 **Read/written by:**
-- Public confirmation (`supabase`, anon): [`events/[slug]/confirmation.astro`](../src/pages/events/[slug]/confirmation.astro)
-  — `select('name, email, phone, ticket_id, team_name, events(...)').in('ticket_id', ticketIds)`
-  to render tickets from the confirmation URL. Public registration submissions go through
-  [`api/register-event.ts`](../src/pages/api/register-event.ts) and the service-role RPC.
+- Public ticket holders use [`api/registration-tickets.ts`](../src/pages/api/registration-tickets.ts),
+  which verifies a short-lived signed receipt before reading only that registration batch. Public
+  registration submissions go through [`api/register-event.ts`](../src/pages/api/register-event.ts)
+  and the service-role RPC. Ticket emails also require that receipt via
+  [`api/send-ticket-email.ts`](../src/pages/api/send-ticket-email.ts).
 - Admin (`supabaseAdmin`): [`console/index.astro`](../src/pages/console/index.astro) (dashboard counts),
   [`console/events/[id]/registrations.astro`](../src/pages/console/events/[id]/registrations.astro)
   (registrant list), [`console/actions/toggle-payment.ts`](../src/pages/console/actions/toggle-payment.ts),
@@ -300,19 +294,10 @@ fail at the database level (invalid enum input), not before.
 
 ## Security notes
 
-1. **`registrations` has an unrestricted public SELECT policy (`qual = true`).** Because the anon key is
-   bundled into client JS, anyone can query `GET /rest/v1/registrations?select=*` directly against
-   Supabase's REST endpoint and receive every registrant's name, email, phone, roll number, branch,
-   college, `payment_id`, and payment status — for every event, not just their own registration.
-    - **Remaining fix:** move the confirmation ticket lookup server-side into an API route using
-      `supabaseAdmin`, then drop the SELECT policy. The anonymous INSERT policy is removed by the
-      registration migration in this change. Until the SELECT policy is removed, this PII exposure
-      remains live:
-      ```sql
-      drop policy "Public can view registrations" on public.registrations;
-      ```
-      After that route change, `registrations` would have **zero** public policies (same default-deny
-      pattern as the four interaction tables), and only `supabaseAdmin` could read or write it.
+1. **Registration privacy depends on applying both registration migrations.** The first removes public
+   inserts and serializes capacity checks; the second removes the unrestricted public SELECT policy.
+   Ticket details are then returned only through a server endpoint after validation of a short-lived
+   signed receipt. Verify both migrations are applied to each Supabase environment before deployment.
 2. **The four interaction tables (`sticky_notes`, `event_wishlist`, `cofounder_posts`, `question_box`)
    correctly use the default-deny pattern:** RLS is on, no policies exist, so the anon key gets nothing.
    All reads/writes are proxied through their `/api/*.ts` routes using `supabaseAdmin`, where input
