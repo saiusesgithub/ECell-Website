@@ -6,6 +6,11 @@ interface Props {
 }
 
 const { event = {}, action, submitLabel } = Astro.props as Props;
+const deadlineValue = event.registration_deadline
+  ? event.slug === 'founders-expo-26'
+    ? new Date(`${event.registration_deadline.replace(' ', 'T')}Z`).toLocaleString('sv-SE', { timeZone: 'Asia/Kolkata' }).replace(' ', 'T').slice(0, 16)
+    : event.registration_deadline.slice(0, 16)
+  : '';
 
 function textListField(value: unknown) {
   if (!value) return '';
@@ -78,7 +83,7 @@ function nameField(value: unknown) {
       <input class="admin-input" type="number" name="max_participants" placeholder="Max participants" value={event.max_participants ?? ''} />
       <div class="sm:col-span-2">
         <label class="text-xs text-gray-500">Registration deadline (leave blank for none)</label>
-        <input class="admin-input w-full mt-1" type="datetime-local" name="registration_deadline" value={event.registration_deadline?.slice(0, 16) ?? ''} />
+        <input class="admin-input w-full mt-1" type="datetime-local" name="registration_deadline" value={deadlineValue} />
       </div>
       <input class="admin-input" type="text" name="requirements" placeholder="Requirements" value={event.requirements ?? ''} />
       <input class="admin-input" type="text" name="prerequisites" placeholder="Prerequisites" value={event.prerequisites ?? ''} />

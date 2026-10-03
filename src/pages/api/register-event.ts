@@ -45,12 +45,58 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: event, error: eventError } = await supabaseAdmin
     .from('events')
-    .select('id, is_team_event, min_team_size, max_team_size')
+    .select('id, slug, is_team_event, min_team_size, max_team_size')
     .eq('id', eventId)
     .maybeSingle();
 
   if (eventError) return json({ error: 'Could not load event settings.' }, 500);
   if (!event) return json({ error: 'Event not found.' }, 404);
+
+  if (event.slug === 'founders-expo-26') {
+    if (rows.length !== 1) return json({ error: 'Submit exactly one registration per stall.' }, 400);
+    const row = rows[0];
+    try {
+      const teamSize = Number(row?.extra_data?.team_size);
+      const memberNames = row?.extra_data?.member_names;
+      const teamName = optionalText(row?.team_name, 'Idea or startup name', 120);
+      if (!teamName || !Number.isInteger(teamSize) || teamSize < 1 || teamSize > 3 ||
+          !Array.isArray(memberNames) || memberNames.length !== teamSize - 1 ||
+          memberNames.some((name: unknown) => typeof name !== 'string' || !name.trim() || name.length > 120) ||
+          row?.extra_data?.single_idea_per_stall !== true) {
+        return json({ error: 'Provide an idea name, one to three members, and confirm one idea per stall.' }, 400);
+      }
+      const name = optionalText(row.name, 'Name', 120);
+      const email = optionalText(row.email, 'Email', 320)?.toLowerCase() ?? null;
+      if (!name || !email || !EMAIL_PATTERN.test(email) || !optionalText(row.phone, 'Phone', 40) ||
+          !optionalText(row.year_of_study, 'Year', 40) || !optionalText(row.branch, 'Branch', 80) ||
+          !optionalText(row.section, 'Section', 40) || !optionalText(row.college, 'College')) {
+        return json({ error: 'Complete all required lead and organization details.' }, 400);
+      }
+      const { data: registrations, error } = await supabaseAdmin.rpc('register_founders_expo_stall', {
+        p_event_id: eventId,
+        p_row: {
+          name, email, phone: row.phone.trim(), year_of_study: row.year_of_study.trim(),
+          branch: row.branch.trim(), section: row.section.trim(), college: row.college.trim(),
+          team_name: teamName,
+          extra_data: { form_variant: 'founders-expo', team_size: teamSize,
+            member_names: memberNames.map((member: string) => member.trim()), single_idea_per_stall: true },
+        },
+      });
+      if (error) {
+        if (error.message.includes('REGISTRATION_CLOSED')) return json({ error: 'Registration has closed for this event.' }, 409);
+        if (error.message.includes('CAPACITY_REACHED')) return json({ error: 'All available stalls have been registered.' }, 409);
+        if (error.message.includes('INVALID_STALL')) return json({ error: 'The stall details are invalid. Check the team size and required fields.' }, 400);
+        if (error.message.includes('DUPLICATE_EMAIL') || error.code === '23505') return json({ code: '23505', error: 'This email is already registered for the event.' }, 409);
+        if (error.message.includes('EVENT_NOT_FOUND')) return json({ error: 'Event not found.' }, 404);
+        console.error('Founders Expo registration failed:', error.code, error.message);
+        return json({ error: 'Could not complete registration.' }, 500);
+      }
+      const ticketIds = (registrations ?? []).map((registration: { ticket_id: string }) => registration.ticket_id);
+      return json({ registrations, accessToken: createTicketAccessToken(ticketIds) });
+    } catch (validationError) {
+      return json({ error: validationError instanceof Error ? validationError.message : 'Invalid registration details.' }, 400);
+    }
+  }
 
   let cleanRows;
   try {

@@ -6,11 +6,11 @@ import { supabaseAdmin } from '../../../lib/supabaseAdmin.js';
 const COLUMNS = [
   'name', 'email', 'phone', 'roll_number', 'branch', 'year_of_study', 'section',
   'college', 'team_name', 'is_team_leader', 'payment_verified', 'is_checked_in',
-  'ticket_id', 'created_at',
+  'ticket_id', 'extra_data', 'created_at',
 ];
 
 function csvEscape(value: unknown) {
-  const str = value === null || value === undefined ? '' : String(value);
+  const str = value === null || value === undefined ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }

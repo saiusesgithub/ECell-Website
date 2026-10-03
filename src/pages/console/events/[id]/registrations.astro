@@ -57,14 +57,14 @@ const { data: registrations, error } = await supabaseAdmin
           </thead>
           <tbody class="divide-y divide-white/10">
             {(registrations ?? []).map((reg) => (
-              <tr class="registration-row" data-search={`${reg.name} ${reg.email} ${reg.team_name ?? ''}`.toLowerCase()}>
+              <tr class="registration-row" data-search={`${reg.name} ${reg.email} ${reg.team_name ?? ''} ${(reg.extra_data?.member_names ?? []).join(' ')}`.toLowerCase()}>
                 <td class="px-4 py-3 text-white font-medium">{reg.name}{reg.is_team_leader && <span class="ml-1 text-xs text-red-300">(lead)</span>}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.email}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.phone ?? '—'}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.roll_number ?? '—'}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.branch ?? '—'}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.year_of_study ?? '—'}</td>
-                <td class="px-4 py-3 text-gray-300">{reg.team_name ?? '—'}</td>
+                <td class="px-4 py-3 text-gray-300">{reg.team_name ?? '—'}{reg.extra_data?.member_names?.length > 0 && <span class="block text-xs text-gray-500">With: {reg.extra_data.member_names.join(', ')}</span>}</td>
                 <td class="px-4 py-3">
                   <button
                     class="toggle-payment-btn rounded-full px-3 py-1 text-xs font-medium border"

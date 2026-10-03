@@ -2,6 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import BackgroundShader from '../../../components/BackgroundShader.astro';
 import Navbar from '../../../components/Navbar.astro';
+import FoundersExpoForm from '../../../components/events/FoundersExpoForm.astro';
 import { supabase } from '../../../lib/supabase.js';
 import { getRegistrationStatus, getRegistrationStatusLabel } from '../../../lib/eventStatus.js';
 
@@ -34,8 +35,9 @@ const formattedDate = new Date(event.date).toLocaleDateString('en-IN', {
 const registrationStatus = getRegistrationStatus(event, registrationCount ?? 0);
 const deadlinePassed = registrationStatus.deadlinePassed;
 const canRegister = registrationStatus.canRegister;
+const isFoundersExpo = event.slug === 'founders-expo-26';
 
-const isTeamEvent = Boolean(event.is_team_event);
+const isTeamEvent = Boolean(event.is_team_event) && !isFoundersExpo;
 const minTeamSize: number | null = event.min_team_size ?? null;
 const maxTeamSize: number | null = event.max_team_size ?? null;
 
@@ -97,6 +99,9 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       )}
 
       {canRegister && (
+        isFoundersExpo ? (
+          <FoundersExpoForm eventId={event.id} eventSlug={event.slug} />
+        ) : (
         <form
           id="registration-form"
           class="flex flex-col gap-7"
@@ -292,6 +297,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
 
           <p id="registration-status" class="text-sm font-inter" role="status"></p>
         </form>
+        )
       )}
     </div>
   </section>

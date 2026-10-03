@@ -61,7 +61,7 @@ The event catalogue. Public read, admin-only write.
 | `registration_open` | `bool` | NO | `true` | toggled from console |
 | `registration_deadline` | `timestamp` | YES | | no timezone |
 | `max_participants` | `int4` | YES | | |
-| `event_type` | `event_type_enum` (enum) | NO | | `hackathon` \| `workshop` \| `talk` |
+| `event_type` | `event_type_enum` (enum) | NO | | `hackathon` \| `workshop` \| `talk` \| `expo` |
 | `status` | `event_status` (enum) | NO | | `upcoming` \| `past` |
 | `requirements` | `text` | YES | | |
 | `prerequisites` | `text` | YES | | |
@@ -277,7 +277,7 @@ Interactions → Question Drop Box.
 | Enum type | Values (in order) |
 |---|---|
 | `event_mode` | `online`, `offline`, `hybrid` |
-| `event_type_enum` | `hackathon`, `workshop`, `talk` |
+| `event_type_enum` | `hackathon`, `workshop`, `talk`, `expo` |
 | `event_status` | `upcoming`, `past` |
 | `payment_status_enum` | `pending`, `paid`, `free`, `failed` |
 

@@ -32,6 +32,7 @@ const formattedDate = new Date(event.date).toLocaleDateString('en-IN', {
 });
 
 const registrationStatus = getRegistrationStatus(event, registrationCount ?? 0);
+const isFoundersExpo = event.slug === 'founders-expo-26';
 const deadlinePassed = registrationStatus.deadlinePassed;
 const canRegister = registrationStatus.canRegister;
 
@@ -41,7 +42,7 @@ if (event.registration_deadline && !deadlinePassed) {
   countdownTarget = new Date(event.registration_deadline).toISOString();
   countdownLabel = 'Registration closes in';
 } else {
-  const eventDateTime = new Date(event.time ? `${event.date}T${event.time}` : event.date);
+  const eventDateTime = new Date(event.time ? `${event.date}T${event.time}${isFoundersExpo ? '+05:30' : ''}` : event.date);
   if (!isNaN(eventDateTime.getTime()) && eventDateTime > new Date()) {
     countdownTarget = eventDateTime.toISOString();
     countdownLabel = 'Event starts in';
@@ -55,8 +56,8 @@ function toDisplayList(value: unknown) {
   );
 }
 
-let teamSizeLabel: string | null = null;
-if (event.is_team_event) {
+let teamSizeLabel: string | null = isFoundersExpo ? '1–3 members per stall' : null;
+if (!isFoundersExpo && event.is_team_event) {
   const min = event.min_team_size;
   const max = event.max_team_size;
   if (min && max) {
@@ -155,7 +156,7 @@ const chiefGuest =
       {event.is_paid && (
         <div class="event-info-card glass noise-overlay p-5">
           <p class="event-info-kicker">Price</p>
-          <p>Rs. {event.price}</p>
+          <p>{isFoundersExpo ? '₹149 per stall' : `Rs. ${event.price}`}</p>
         </div>
       )}
       {event.prize_pool && (
@@ -177,6 +178,10 @@ const chiefGuest =
         <h2>About this event</h2>
         <p>{event.long_description}</p>
       </div>
+    )}
+
+    {isFoundersExpo && (
+      <p class="event-content-card mb-8"><strong>One stall can represent only one idea or startup.</strong> Register each idea separately. Stall capacity is unlimited while registration remains open.</p>
     )}
 
     {(event.requirements || event.prerequisites) && (

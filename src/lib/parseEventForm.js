@@ -77,9 +77,14 @@ export function eventFormDraft(formData) {
 }
 
 export function parseEventForm(formData) {
+  const deadlineInput = str(formData, 'registration_deadline');
+  const slug = str(formData, 'slug');
+  const registrationDeadline = deadlineInput && slug === 'founders-expo-26'
+    ? new Date(`${deadlineInput}:00+05:30`).toISOString().slice(0, 19).replace('T', ' ')
+    : deadlineInput;
   return {
     title: str(formData, 'title'),
-    slug: str(formData, 'slug'),
+    slug,
     short_description: str(formData, 'short_description'),
     long_description: str(formData, 'long_description'),
     date: str(formData, 'date'),
@@ -92,7 +97,7 @@ export function parseEventForm(formData) {
     is_featured: bool(formData, 'is_featured'),
     registration_open: bool(formData, 'registration_open'),
     max_participants: num(formData, 'max_participants'),
-    registration_deadline: str(formData, 'registration_deadline'),
+    registration_deadline: registrationDeadline,
     requirements: str(formData, 'requirements'),
     prerequisites: str(formData, 'prerequisites'),
     whatsapp_group_link: str(formData, 'whatsapp_group_link'),
