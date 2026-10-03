@@ -31,7 +31,7 @@ in the Supabase SQL Editor and diff the output against the tables below.
 | Table | Purpose | Rows written by |
 |---|---|---|
 | [`events`](#events) | Event catalogue (workshops, hackathons, talks) | Console (admin) |
-| [`registrations`](#registrations) | Per-event sign-ups / tickets | Public (anon insert) |
+| [`registrations`](#registrations) | Per-event sign-ups / tickets | Public (validated API route) |
 | [`sticky_notes`](#sticky_notes) | Interactions → Sticky Wall | Public (via API route) |
 | [`event_wishlist`](#event_wishlist) | Interactions → Event Wishlist | Public (via API route) |
 | [`cofounder_posts`](#cofounder_posts) | Interactions → Find a Cofounder | Public (via API route) |
@@ -146,11 +146,17 @@ registration per email per event).
 `registrations_event_id_email_key` (event_id, email), `idx_registrations_event_id` (event_id),
 `idx_registrations_event_team` (event_id, team_name).
 
-**RLS:** enabled, 2 policies —
+Public registration batches are inserted through `register_event_batch(uuid, jsonb)`. The migration
+drops the previous anonymous insert policy so requests cannot bypass the API. The function locks the
+event row while it checks registration state and capacity, then inserts the full batch in the same
+transaction. Its execute grant is limited to `service_role`. The public events listing uses
+`get_event_registration_counts()` to retrieve aggregate counts without transferring registration rows.
+Both functions are created by [`20261003000000_atomic_event_registration.sql`](../supabase/migrations/20261003000000_atomic_event_registration.sql).
+
+**RLS:** enabled, 1 policy —
 
 | Policy | Command | Roles | Condition |
 |---|---|---|---|
-| `Public can register for open events` | `INSERT` | `anon, authenticated` | `with check`: matching `events` row has `registration_open = true` AND (`registration_deadline IS NULL` OR deadline is in the future) |
 | `Public can view registrations` | `SELECT` | `anon, authenticated` | `true` — **unrestricted read of every column on every row** |
 
 > ⚠️ **See [Security notes](#security-notes) — this SELECT policy is a live PII exposure.** Flagged
@@ -158,10 +164,10 @@ registration per email per event).
 > document first).
 
 **Read/written by:**
-- Public (`supabase`, anon): [`events/[slug]/registration.astro`](../src/pages/events/[slug]/registration.astro)
-  — `insert(rows).select('ticket_id')` (the insert-then-return is *why* the SELECT policy exists);
-  [`events/[slug]/confirmation.astro`](../src/pages/events/[slug]/confirmation.astro) — `select('name, email, phone, ticket_id, team_name, events(...)').in('ticket_id', ticketIds)`
-  to render the post-registration ticket, filtered by the ticket IDs from the confirmation URL.
+- Public confirmation (`supabase`, anon): [`events/[slug]/confirmation.astro`](../src/pages/events/[slug]/confirmation.astro)
+  — `select('name, email, phone, ticket_id, team_name, events(...)').in('ticket_id', ticketIds)`
+  to render tickets from the confirmation URL. Public registration submissions go through
+  [`api/register-event.ts`](../src/pages/api/register-event.ts) and the service-role RPC.
 - Admin (`supabaseAdmin`): [`console/index.astro`](../src/pages/console/index.astro) (dashboard counts),
   [`console/events/[id]/registrations.astro`](../src/pages/console/events/[id]/registrations.astro)
   (registrant list), [`console/actions/toggle-payment.ts`](../src/pages/console/actions/toggle-payment.ts),
@@ -298,23 +304,15 @@ fail at the database level (invalid enum input), not before.
    bundled into client JS, anyone can query `GET /rest/v1/registrations?select=*` directly against
    Supabase's REST endpoint and receive every registrant's name, email, phone, roll number, branch,
    college, `payment_id`, and payment status — for every event, not just their own registration.
-   - **Why it exists:** two client-side (anon) call sites need it —
-     `registration.astro`'s `insert(rows).select('ticket_id')` (Postgres requires SELECT permission to
-     return an inserted row) and `confirmation.astro`'s ticket lookup by `ticket_id`. Both only ever
-     *use* a narrow slice of data, but the policy itself does not — and cannot, in Postgres RLS — express
-     "only the row(s) matching a `ticket_id` I already know," since RLS policies gate rows, not query
-     intent.
-   - **Fix (not yet applied — documented per explicit request to hold off):** move both operations
-     server-side into an API route using `supabaseAdmin` (mirroring the existing pattern in
-     `src/pages/api/`), have `registration.astro`/`confirmation.astro` call that route via `fetch`
-     instead of the anon Supabase client, then drop both policies:
-     ```sql
-     drop policy "Public can view registrations" on public.registrations;
-     drop policy "Public can register for open events" on public.registrations;
-     ```
-     After the route change, `registrations` would have **zero** public policies (same default-deny
-     pattern as the four interaction tables), and only `supabaseAdmin` (server-side, behind the admin
-     API routes) could read or write it.
+    - **Remaining fix:** move the confirmation ticket lookup server-side into an API route using
+      `supabaseAdmin`, then drop the SELECT policy. The anonymous INSERT policy is removed by the
+      registration migration in this change. Until the SELECT policy is removed, this PII exposure
+      remains live:
+      ```sql
+      drop policy "Public can view registrations" on public.registrations;
+      ```
+      After that route change, `registrations` would have **zero** public policies (same default-deny
+      pattern as the four interaction tables), and only `supabaseAdmin` could read or write it.
 2. **The four interaction tables (`sticky_notes`, `event_wishlist`, `cofounder_posts`, `question_box`)
    correctly use the default-deny pattern:** RLS is on, no policies exist, so the anon key gets nothing.
    All reads/writes are proxied through their `/api/*.ts` routes using `supabaseAdmin`, where input

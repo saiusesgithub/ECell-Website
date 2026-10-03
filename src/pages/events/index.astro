@@ -7,14 +7,18 @@ import { getRegistrationStatus } from '../../lib/eventStatus.js';
 
 export const prerender = false;
 
-const { data: events, error } = await supabase
-  .from('events')
-  .select('id, slug, title, short_description, date, time, venue, mode, poster_url, registration_open, registration_deadline, max_participants, is_featured')
-  .order('date', { ascending: true });
+Astro.response.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=300');
 
-const { data: registrationRows, error: registrationsError } = await supabase
-  .from('registrations')
-  .select('event_id');
+const [eventsResult, countsResult] = await Promise.all([
+  supabase
+    .from('events')
+    .select('id, slug, title, short_description, date, time, venue, mode, poster_url, registration_open, registration_deadline, max_participants, is_featured')
+    .order('date', { ascending: true }),
+  supabase.rpc('get_event_registration_counts'),
+]);
+
+const { data: events, error } = eventsResult;
+const { data: registrationCounts, error: registrationsError } = countsResult;
 
 if (error) {
   console.error('Failed to load events:', error.message);
@@ -26,8 +30,8 @@ if (registrationsError) {
 
 const hasEvents = Array.isArray(events) && events.length > 0;
 const countsByEvent = new Map();
-for (const row of registrationRows ?? []) {
-  countsByEvent.set(row.event_id, (countsByEvent.get(row.event_id) ?? 0) + 1);
+for (const row of registrationCounts ?? []) {
+  countsByEvent.set(row.event_id, Number(row.registered_count));
 }
 
 const formatEventDate = (date: string) => new Date(date).toLocaleDateString('en-IN', {

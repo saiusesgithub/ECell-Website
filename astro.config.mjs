@@ -9,9 +9,8 @@ export default defineConfig({
     // that fails Astro's same-origin POST guard for server-rendered routes.
     checkOrigin: false,
   },
-  // Site stays fully static by default. The adapter only enables on-demand
-  // rendering for routes that explicitly opt in via `export const prerender = false`
-  // (currently just src/pages/api/send-ticket-email.ts).
+  // Pages stay static by default; routes opt in to on-demand rendering with
+  // `export const prerender = false` when they need live data or server actions.
   adapter: vercel(),
   server: {
     host: true,
