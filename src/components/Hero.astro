@@ -23,6 +23,7 @@ const {
     <div class="hero-grid flex flex-col items-center text-center">
       <div class="hero-intro max-w-5xl w-full">
         <h1 class="sr-only">{title}</h1>
+        <span class="hero-mobile-title" aria-hidden="true">{title}</span>
 
         <div class="hero-title-stage" data-hero-hover>
           <svg width="100%" height="100%" viewBox="0 0 1600 360" xmlns="http://www.w3.org/2000/svg" class="hero-title-svg" role="img" aria-label={title}>
@@ -82,6 +83,10 @@ const {
     width: 100%;
   }
 
+  .hero-mobile-title {
+    display: none;
+  }
+
   .hero-title-stage {
     width: min(100%, 1600px);
     margin: 0 auto;
@@ -114,7 +119,7 @@ const {
   }
 
   .hero-fluid-rise {
-    transform: translateY(340px);
+    transform: translateY(0);
   }
 
   .hero-fluid-wave {
@@ -138,25 +143,6 @@ const {
 
   .hero-action {
     min-width: min(100%, 17rem);
-  }
-
-  body:not(.loading) .hero-fluid-rise {
-    animation: heroFluidCycle 10s cubic-bezier(0.33, 1, 0.68, 1) 0.15s infinite;
-  }
-
-  @keyframes heroFluidCycle {
-    0% {
-      transform: translateY(340px);
-    }
-    20% {
-      transform: translateY(0);
-    }
-    76% {
-      transform: translateY(0);
-    }
-    100% {
-      transform: translateY(340px);
-    }
   }
 
   @keyframes heroWaveDrift {
@@ -185,7 +171,7 @@ const {
     }
 
     .hero-fluid-rise {
-      transform: translateY(0);
+      transform: none;
     }
   }
 
@@ -198,6 +184,33 @@ const {
 
     .hero-title-stage {
       height: clamp(118px, 31vw, 205px);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero-shell {
+      min-height: auto;
+      padding-top: 3.5rem;
+      padding-bottom: 3rem;
+    }
+
+    .hero-title-stage {
+      display: none;
+    }
+
+    .hero-mobile-title {
+      display: block;
+      margin: 0 auto 1.25rem;
+      color: #fff;
+      font-family: var(--font-hero);
+      font-size: 2.5rem;
+      line-height: 1.05;
+      text-wrap: balance;
+    }
+
+    .hero-copy {
+      font-size: 1rem;
+      line-height: 1.6;
     }
   }
 </style>

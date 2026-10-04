@@ -44,6 +44,7 @@ const { navLinks = [
             class="mobile-toggle inline-flex lg:hidden items-center justify-center p-2.5 text-white"
             aria-expanded="false"
             aria-controls="mobile-menu"
+            aria-label="Open navigation menu"
             data-mobile-toggle
           >
             <span class="sr-only">Toggle navigation menu</span>
@@ -328,6 +329,8 @@ const { navLinks = [
   }
 
   .mobile-toggle {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     clip-path: polygon(0.65rem 0, 100% 0, 100% calc(100% - 0.65rem), calc(100% - 0.65rem) 100%, 0 100%, 0 0.65rem);
     border: 0;
     background: rgba(255, 255, 255, 0.035);
@@ -424,7 +427,11 @@ const { navLinks = [
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767px) {
+    .navbar-cta {
+      display: none;
+    }
+
     .navbar-rim {
       --nav-cut: 1.1rem;
     }

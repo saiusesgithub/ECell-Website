@@ -21,15 +21,30 @@ html,
 body {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow-x: hidden;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: clip;
 }
 
 body {
   background: #000;
   color: #fff;
   font-family: var(--font-display);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+@media (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .wl-submit,
+  .cf-submit {
+    min-height: 2.75rem;
+  }
 }
 
 canvas {

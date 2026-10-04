@@ -30,18 +30,18 @@ const {
   <body class="min-h-screen bg-black text-white font-inter">
     {showNav && (
       <header class="border-b border-white/10 bg-black/60">
-        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
           <a href={homeHref} class="font-jakarta font-semibold tracking-tight text-white">
             {brandLabel}
           </a>
-          <nav class="flex items-center gap-5 text-sm font-inter text-gray-300">
+          <nav class="flex items-center gap-4 sm:gap-5 text-sm font-inter text-gray-300">
             <a href={homeHref} class="hover:text-white transition-colors">Home</a>
             <a href={logoutHref} class="hover:text-white transition-colors">Log out</a>
           </nav>
         </div>
       </header>
     )}
-    <main class="max-w-6xl mx-auto px-6 py-10">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
       <slot />
     </main>
   </body>
