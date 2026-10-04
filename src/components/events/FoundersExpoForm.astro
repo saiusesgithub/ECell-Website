@@ -21,9 +21,10 @@ const { eventId, eventSlug } = Astro.props as Props;
   </div>
   <label class="expo-confirm"><input type="checkbox" name="single_idea_per_stall" required /> I confirm that this stall represents only one idea or startup. A separate stall registration is required for each idea.</label>
   <div class="expo-payment-block">
-    <p class="expo-payment">Scan this QR to pay the fixed registration fee of <strong>₹149 per stall</strong>. Complete payment before submitting the stall registration.</p>
+    <p class="expo-payment">Pay the fixed fee of <strong>₹149 per stall</strong> using this QR code. Enter the transaction ID from your payment app below before submitting.</p>
     <img class="expo-payment-qr" src="/images/events/founders-expo-payment-qr.png" alt="Payment QR code for the Founders Expo registration fee" loading="lazy" width="240" height="240" />
   </div>
+  <label class="expo-transaction">Payment transaction ID<input name="payment_transaction_id" autocomplete="off" minlength="4" maxlength="120" placeholder="UPI transaction ID / UTR" required /><small>We will verify the payment against this reference.</small></label>
   <p class="expo-status" id="expo-status" role="status" aria-live="polite"></p>
   <button class="expo-submit" type="submit">Register one stall</button>
 </form>
@@ -42,6 +43,9 @@ const { eventId, eventSlug } = Astro.props as Props;
   .expo-wide { grid-column:1/-1; }
   .expo-confirm { display:flex; align-items:flex-start; gap:.65rem; font-size:.9rem; line-height:1.5; }
   .expo-confirm input { margin-top:.2rem; accent-color:#e74739; }
+  .expo-transaction { display:grid; gap:.45rem; max-width:34rem; font-size:.9rem; color:#e7dada; }
+  .expo-transaction input { width:100%; padding:.75rem .85rem; color:white; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.17); border-radius:4px; }
+  .expo-transaction small { color:#bca6a6; }
   .expo-status:empty { display:none; }
   .expo-status { margin:0; color:#ffaaa3; }
   .expo-submit { justify-self:start; border:1px solid #f06c5e; border-radius:4px; padding:.8rem 1.1rem; color:white; background:#a82a20; font-weight:600; cursor:pointer; }
@@ -77,8 +81,9 @@ const { eventId, eventSlug } = Astro.props as Props;
     const button = form.querySelector<HTMLButtonElement>('button[type="submit"]');
     const status = document.querySelector<HTMLElement>('#expo-status');
     const data = new FormData(form);
-    const teamSize = Number(data.get('team_size'));
-    const branchValue = data.get('branch') === 'Other' ? data.get('branch_other') : data.get('branch');
+      const teamSize = Number(data.get('team_size'));
+      const transactionId = String(data.get('payment_transaction_id') ?? '').trim();
+      const branchValue = data.get('branch') === 'Other' ? data.get('branch_other') : data.get('branch');
     if (button) button.disabled = true;
     if (status) status.textContent = 'Submitting registration…';
     try {
@@ -90,6 +95,7 @@ const { eventId, eventSlug } = Astro.props as Props;
           college:data.get('college'), team_name:data.get('team_name'),
           extra_data:{ form_variant:'founders-expo', team_size:teamSize,
             member_names:Array.from({length:teamSize-1},(_,index)=>data.get(`member_${index+1}`)),
+            payment_transaction_id:transactionId,
             single_idea_per_stall:data.get('single_idea_per_stall')==='on' },
         }] }),
       });

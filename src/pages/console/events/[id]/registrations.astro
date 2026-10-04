@@ -49,6 +49,7 @@ const { data: registrations, error } = await supabaseAdmin
               <th class="px-4 py-3">Branch</th>
               <th class="px-4 py-3">Year</th>
               <th class="px-4 py-3">Team</th>
+              <th class="px-4 py-3">Payment transaction ID</th>
               <th class="px-4 py-3">Payment</th>
               <th class="px-4 py-3">Checked In</th>
               <th class="px-4 py-3">Registered</th>
@@ -65,6 +66,7 @@ const { data: registrations, error } = await supabaseAdmin
                 <td class="px-4 py-3 text-gray-300">{reg.branch ?? '—'}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.year_of_study ?? '—'}</td>
                 <td class="px-4 py-3 text-gray-300">{reg.team_name ?? '—'}{reg.extra_data?.member_names?.length > 0 && <span class="block text-xs text-gray-500">With: {reg.extra_data.member_names.join(', ')}</span>}</td>
+                <td class="px-4 py-3 text-gray-300">{reg.extra_data?.payment_transaction_id ?? '—'}</td>
                 <td class="px-4 py-3">
                   <button
                     class="toggle-payment-btn rounded-full px-3 py-1 text-xs font-medium border"
@@ -105,7 +107,7 @@ const { data: registrations, error } = await supabaseAdmin
             ))}
             {(registrations ?? []).length === 0 && (
               <tr>
-                <td colspan="11" class="px-4 py-8 text-center text-gray-500">No registrations yet.</td>
+                <td colspan="12" class="px-4 py-8 text-center text-gray-500">No registrations yet.</td>
               </tr>
             )}
           </tbody>

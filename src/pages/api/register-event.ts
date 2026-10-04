@@ -59,11 +59,13 @@ export const POST: APIRoute = async ({ request }) => {
       const teamSize = Number(row?.extra_data?.team_size);
       const memberNames = row?.extra_data?.member_names;
       const teamName = optionalText(row?.team_name, 'Idea or startup name', 120);
+      const paymentTransactionId = optionalText(row?.extra_data?.payment_transaction_id, 'Payment transaction ID', 120);
       if (!teamName || !Number.isInteger(teamSize) || teamSize < 1 || teamSize > 3 ||
           !Array.isArray(memberNames) || memberNames.length !== teamSize - 1 ||
           memberNames.some((name: unknown) => typeof name !== 'string' || !name.trim() || name.length > 120) ||
+          !paymentTransactionId || paymentTransactionId.length < 4 ||
           row?.extra_data?.single_idea_per_stall !== true) {
-        return json({ error: 'Provide an idea name, one to three members, and confirm one idea per stall.' }, 400);
+        return json({ error: 'Provide the idea name, valid team details, payment transaction ID, and one-idea-per-stall confirmation.' }, 400);
       }
       const name = optionalText(row.name, 'Name', 120);
       const email = optionalText(row.email, 'Email', 320)?.toLowerCase() ?? null;
@@ -79,7 +81,8 @@ export const POST: APIRoute = async ({ request }) => {
           branch: row.branch.trim(), section: row.section.trim(), college: row.college.trim(),
           team_name: teamName,
           extra_data: { form_variant: 'founders-expo', team_size: teamSize,
-            member_names: memberNames.map((member: string) => member.trim()), single_idea_per_stall: true },
+            member_names: memberNames.map((member: string) => member.trim()),
+            payment_transaction_id: paymentTransactionId, single_idea_per_stall: true },
         },
       });
       if (error) {

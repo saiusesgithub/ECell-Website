@@ -35,7 +35,8 @@ const formattedDate = new Date(event.date).toLocaleDateString('en-IN', {
 const registrationStatus = getRegistrationStatus(event, registrationCount ?? 0);
 const deadlinePassed = registrationStatus.deadlinePassed;
 const canRegister = registrationStatus.canRegister;
-const isFoundersExpo = event.slug === 'founders-expo-26';
+const isFoundersExpo = slug === 'founders-expo-26' || event.slug === 'founders-expo-26' ||
+  String(event.title ?? '').toLowerCase().includes('founders expo');
 
 const isTeamEvent = Boolean(event.is_team_event) && !isFoundersExpo;
 const minTeamSize: number | null = event.min_team_size ?? null;
@@ -100,7 +101,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
 
       {canRegister && (
         isFoundersExpo ? (
-          <FoundersExpoForm eventId={event.id} eventSlug={event.slug} />
+          <FoundersExpoForm eventId={event.id} eventSlug={event.slug || slug} />
         ) : (
         <form
           id="registration-form"
