@@ -77,17 +77,18 @@ insert into public.events (
   title, slug, short_description, long_description, date, time, venue, mode,
   poster_url, event_type, status, registration_open, registration_deadline,
   max_participants, requirements, prerequisites, is_paid, price, payment_link,
-  is_featured, is_team_event, min_team_size, max_team_size
+  is_featured, is_team_event, min_team_size, max_team_size, whatsapp_group_link
 ) values (
   'Founders Expo ''26',
   'founders-expo-26',
   'Showcase a startup or raw idea, collect feedback, and meet potential teammates.',
   'Founders Expo ’26 is a platform for anyone to present a startup or idea at any stage, from a raw idea to an established venture. Each registered idea or startup receives one stall. Students and faculty can share feedback through review cards and may express interest in joining your team. A registered startup is not required.',
-  date '2026-10-13', time '09:20:00', 'Venue to be announced', 'offline',
+  date '2026-10-13', time '09:20:00', 'C Block, Ground Floor, Seminar Hall', 'offline',
   '', 'expo', 'upcoming', true, timestamp '2026-10-12 18:29:00',
   null,
-  'Entry fee: ₹149 per startup/idea. Teams may have up to 3 members; individuals are welcome. One stall can represent only one idea/startup. Payment QR and poster link will be added later.',
+  'Entry fee: ₹149 per startup/idea. Teams may have up to 3 members; individuals are welcome. One stall can represent only one idea/startup. Pay the fixed ₹149 fee using the QR code shown on the registration page.',
   'Open to students, faculty, and others with an idea or startup at any stage, including raw ideas.',
-  true, 149, null, false, true, 1, 3
+  true, 149, null, false, true, 1, 3,
+  'https://chat.whatsapp.com/HwVDt3NMVvK5xYxETbwMcm'
 )
 on conflict (slug) do nothing;

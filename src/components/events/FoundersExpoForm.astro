@@ -20,7 +20,10 @@ const { eventId, eventSlug } = Astro.props as Props;
     <label class="expo-member" data-member="2" hidden>Team member 3 name<input name="member_2" maxlength="120" /></label>
   </div>
   <label class="expo-confirm"><input type="checkbox" name="single_idea_per_stall" required /> I confirm that this stall represents only one idea or startup. A separate stall registration is required for each idea.</label>
-  <p class="expo-payment">Payment QR/details will be added soon. The registration fee is ₹149 per stall.</p>
+  <div class="expo-payment-block">
+    <p class="expo-payment">Scan this QR to pay the fixed registration fee of <strong>₹149 per stall</strong>. Complete payment before submitting the stall registration.</p>
+    <img class="expo-payment-qr" src="/images/events/founders-expo-payment-qr.png" alt="Payment QR code for the Founders Expo registration fee" loading="lazy" width="240" height="240" />
+  </div>
   <p class="expo-status" id="expo-status" role="status" aria-live="polite"></p>
   <button class="expo-submit" type="submit">Register one stall</button>
 </form>
@@ -29,6 +32,9 @@ const { eventId, eventSlug } = Astro.props as Props;
   .expo-form { display:grid; gap:1.25rem; color:#f4eeee; font-family:var(--font-inter); }
   .expo-heading h2 { margin:0 0 .35rem; font:600 1.25rem var(--font-jakarta); }
   .expo-heading p,.expo-payment { margin:0; color:#d6b8b8; font-size:.9rem; }
+  .expo-payment-block { display:grid; gap:.8rem; }
+  .expo-payment strong { color:#fff; }
+  .expo-payment-qr { width:240px; max-width:100%; aspect-ratio:1; padding:8px; background:white; border-radius:4px; }
   .expo-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
   .expo-grid label { display:grid; gap:.45rem; font-size:.85rem; color:#e7dada; }
   .expo-grid input,.expo-grid select { min-width:0; width:100%; padding:.75rem .85rem; color:white; background:rgba(255,255,255,.045); border:1px solid rgba(255,255,255,.17); border-radius:4px; }
