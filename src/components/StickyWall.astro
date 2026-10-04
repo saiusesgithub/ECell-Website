@@ -44,7 +44,7 @@ const swatches = ['amber', 'rose', 'orange', 'lime', 'sky', 'violet'];
 
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <span class="sticky-label !mb-0">Colour</span>
-      <div class="flex items-center gap-2" data-note-swatches role="radiogroup" aria-label="Note colour">
+      <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto" data-note-swatches role="radiogroup" aria-label="Note colour">
         {swatches.map((c, i) => (
           <button type="button" class={`sticky-swatch sticky-${c}`} data-color={c}
             role="radio" aria-checked={i === 0 ? 'true' : 'false'} aria-label={c}></button>
@@ -252,6 +252,8 @@ const swatches = ['amber', 'rose', 'orange', 'lime', 'sky', 'violet'];
 
   @media (max-width: 640px) {
     .sticky { width: 7.5rem; min-height: 7rem; }
+    .sticky-swatch { width: 2.75rem; height: 2.75rem; }
+    .sticky-submit { min-height: 2.75rem; }
   }
 </style>
 

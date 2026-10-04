@@ -96,7 +96,7 @@ const badgeClass = isPresident
 
 <article
   class:list={[
-    'team-card-reveal team-card-tilt team-card-shell p-6 h-full flex flex-col transition-all duration-300 relative',
+    'team-card-reveal team-card-tilt team-card-shell p-4 sm:p-6 h-full flex flex-col transition-all duration-300 relative',
     accentClass
   ]}
   style={`--card-delay:${Math.max(index, 0) * 85}ms;`}
@@ -162,6 +162,8 @@ const badgeClass = isPresident
 
 <style>
   .team-card-shell {
+    min-width: 0;
+    width: 100%;
     background: linear-gradient(165deg, rgba(30, 6, 4, 0.92), rgba(16, 3, 2, 0.88));
     border: 1px solid rgba(255, 100, 60, 0.2);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -186,6 +188,9 @@ const badgeClass = isPresident
 
   .team-role-badge {
     display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     align-items: center;
     gap: 0.4rem;
     font-family: var(--font-display);
@@ -201,8 +206,13 @@ const badgeClass = isPresident
 
   .role-crest-copy {
     display: inline-flex;
+    min-width: 0;
     flex-direction: column;
     line-height: 1.05;
+  }
+
+  .team-card-shell h3 {
+    overflow-wrap: anywhere;
   }
 
   .role-crest-copy small {

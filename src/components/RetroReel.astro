@@ -577,6 +577,29 @@ const items = (reel || []).filter(Boolean);
     background: #fee2e2;
   }
 
+  @media (max-width: 640px) {
+    .reel-controls {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.65rem;
+    }
+
+    .reel-deckmid,
+    .reel-knob,
+    .reel-ctl-label {
+      display: none;
+    }
+
+    .reel-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+
+    .reel-vol {
+      width: min(4.5rem, 20vw);
+    }
+  }
+
   /* ── Fullscreen: drop the CRT effects, show clean ──────────── */
   .reel-tv:fullscreen,
   .reel-tv.is-fullscreen {

@@ -599,6 +599,65 @@ const stats = [
     color: rgb(254 226 226);
   }
 
+  @media (max-width: 640px) {
+    .achievement-stat-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .achievement-stat:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .achievement-stat span {
+      overflow-wrap: anywhere;
+    }
+
+    .timeline-stage {
+      padding: 1.5rem 0.65rem 2rem;
+    }
+
+    .timeline-rail {
+      left: 1.25rem;
+    }
+
+    .timeline-checkpoint {
+      grid-template-columns: 1.1rem minmax(0, 1fr);
+      gap: 0.5rem;
+    }
+
+    .checkpoint-node {
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .checkpoint-node span {
+      inset: 0.25rem;
+    }
+
+    .checkpoint-card {
+      min-width: 0;
+      padding: 0.75rem;
+    }
+
+    .checkpoint-body {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.65rem;
+    }
+
+    .checkpoint-body > div:last-child {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .checkpoint-meta,
+    .checkpoint-footer {
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+    }
+  }
+
   @keyframes livePulse {
     70% {
       box-shadow: 0 0 0 10px rgba(248, 113, 113, 0);
