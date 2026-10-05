@@ -92,10 +92,10 @@ const chiefGuest =
   </section>
 
   <section class="container mx-auto px-6 py-10 md:py-14 relative z-10">
-    <div class="event-detail-shell noise-overlay">
-      <figure class="event-detail-poster">
-        {event.poster_url ? (
-          <img src={event.poster_url} alt={`${event.title} poster`} loading="eager" decoding="async" />
+    <div class:list={['event-detail-shell noise-overlay', { 'event-detail-shell--portrait': isFoundersExpo }]}>
+      <figure class:list={['event-detail-poster', { 'event-detail-poster--portrait': isFoundersExpo }]}>
+        {(event.poster_url || isFoundersExpo) ? (
+          <img src={event.poster_url || '/images/events/founders-expo-poster.png'} alt={`${event.title} poster`} loading="eager" decoding="async" />
         ) : (
           <div class="event-poster-fallback">
             <span>Poster</span>
@@ -284,6 +284,22 @@ const chiefGuest =
     min-height: inherit;
     object-fit: cover;
     display: block;
+  }
+
+  .event-detail-poster--portrait {
+    width: 100%;
+    max-width: 34rem;
+    min-height: 0;
+    justify-self: center;
+    padding: 0.5rem;
+    background: #050505;
+    clip-path: none;
+  }
+
+  .event-detail-poster--portrait img {
+    height: auto;
+    min-height: 0;
+    object-fit: contain;
   }
 
   .event-poster-fallback {

@@ -62,10 +62,10 @@ const registrationStatusFor = (event: Record<string, any>) =>
     {hasEvents && (
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-7 mb-12 md:mb-16">
         {events.map((event) => (
-          <a href={`/events/${event.slug}`} class="event-card-cut noise-overlay">
+          <a href={`/events/${event.slug}`} class:list={['event-card-cut noise-overlay', { 'event-card-cut--portrait': event.slug === 'founders-expo-26' }]}>
             <figure class="event-poster-preview">
-              {event.poster_url ? (
-                <img src={event.poster_url} alt={`${event.title} poster`} loading="lazy" decoding="async" />
+              {(event.poster_url || event.slug === 'founders-expo-26') ? (
+                <img src={event.poster_url || '/images/events/founders-expo-poster.png'} alt={`${event.title} poster`} loading="lazy" decoding="async" />
               ) : (
                 <div class="event-poster-fallback">
                   <span>Poster</span>
@@ -157,7 +157,7 @@ const registrationStatusFor = (event: Record<string, any>) =>
 
   .event-card-cut {
     display: grid;
-    min-height: 100%;
+    align-self: start;
     color: inherit;
     border: 1px solid rgba(248, 113, 113, 0.2);
     background:
@@ -202,6 +202,23 @@ const registrationStatusFor = (event: Record<string, any>) =>
   .event-card-cut:hover .event-poster-preview img {
     transform: scale(1.045);
     filter: saturate(1.16) contrast(1.08) brightness(1.04);
+  }
+
+  .event-card-cut--portrait .event-poster-preview {
+    aspect-ratio: 1131 / 1600;
+    padding: 0.4rem;
+    background: #050505;
+  }
+
+  .event-card-cut--portrait .event-poster-preview::after {
+    display: none;
+  }
+
+  .event-card-cut--portrait .event-poster-preview img,
+  .event-card-cut--portrait:hover .event-poster-preview img {
+    object-fit: contain;
+    filter: none;
+    transform: none;
   }
 
   .event-poster-fallback {
