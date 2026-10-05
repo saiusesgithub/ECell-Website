@@ -12,12 +12,16 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: registration, error } = await supabaseAdmin
     .from('registrations')
-    .select('id, name, email, team_name, is_team_leader, is_checked_in, checked_in_at, events (title, date, time, venue)')
+    .select('id, name, email, team_name, is_team_leader, payment_verified, is_checked_in, checked_in_at, events (slug, title, date, time, venue)')
     .eq('ticket_id', ticketId)
     .single();
 
   if (error || !registration) {
     return new Response(JSON.stringify({ found: false }), { status: 200 });
+  }
+
+  if ((registration.events as any)?.slug === 'founders-expo-26' && !registration.payment_verified) {
+    return new Response(JSON.stringify({ found: false, error: 'This stall is pending payment approval.' }), { status: 403 });
   }
 
   if (registration.is_checked_in) {

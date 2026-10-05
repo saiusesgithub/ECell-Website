@@ -4,6 +4,7 @@ import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../lib/supabaseAdmin.js';
 import { generateTicketsPdfBytes } from '../../lib/ticketPdf.js';
 import { verifyTicketAccessToken } from '../../lib/ticketAccess.js';
+import { bytesToBase64 } from '../../lib/bytesToBase64.js';
 
 const MAILEROO_ENDPOINT = 'https://smtp.maileroo.com/api/v2/emails';
 
@@ -83,11 +84,14 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: registrations, error } = await supabaseAdmin
     .from('registrations')
-    .select('id, name, email, phone, ticket_id, team_name, email_sent, events (title, date, time, venue, whatsapp_group_link)')
+    .select('id, name, email, phone, ticket_id, team_name, email_sent, events (slug, title, date, time, venue, whatsapp_group_link)')
     .in('ticket_id', ticketIds);
 
   if (error || !registrations) {
     return json({ error: 'Could not load registrations.' }, 500);
+  }
+  if (registrations.some((registration) => (registration.events as any)?.slug === 'founders-expo-26')) {
+    return json({ error: 'Founders Expo emails are sent after admin approval.' }, 403);
   }
 
   const baseUrl = new URL(request.url).origin;
@@ -101,7 +105,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     try {
       const pdfBytes = await generateTicketsPdfBytes([registration], { baseUrl });
-      const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
+      const pdfBase64 = bytesToBase64(pdfBytes);
 
       const emailResponse = await fetch(MAILEROO_ENDPOINT, {
         method: 'POST',
@@ -112,7 +116,7 @@ export const POST: APIRoute = async ({ request }) => {
         body: JSON.stringify({
           from: { address: fromAddress, display_name: fromName },
           to: [{ address: registration.email, display_name: registration.name }],
-          subject: `Your ticket for ${registration.events?.title ?? 'the event'}`,
+          subject: `Your ticket for ${(registration.events as any)?.title ?? 'the event'}`,
           html: buildEmailHtml(registration),
           attachments: [
             {

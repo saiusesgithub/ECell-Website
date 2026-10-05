@@ -165,7 +165,7 @@ import ConsoleLayout from '../../layouts/ConsoleLayout.astro';
       const result = await response.json();
 
       if (!result.found) {
-        showResult('error', 'Ticket not found', 'This QR code doesn\'t match any registration.');
+        showResult('error', 'Ticket not valid', result.error ?? 'This QR code doesn\'t match any registration.');
       } else if (result.alreadyCheckedIn) {
         const time = result.registration.checked_in_at
           ? new Date(result.registration.checked_in_at).toLocaleTimeString('en-IN')

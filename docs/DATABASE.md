@@ -153,6 +153,15 @@ transaction. Its execute grant is limited to `service_role`. Event pages and the
 `get_event_registration_counts()` to retrieve aggregate counts without transferring registration rows.
 The functions are created by [`20261003000000_atomic_event_registration.sql`](../supabase/migrations/20261003000000_atomic_event_registration.sql).
 
+Founders Expo keeps one `registrations` row per stall. Its `extra_data` contains the teammate contact
+details, payment transaction ID, and a path to the payment screenshot in the private
+`founders-expo-payments` Storage bucket. Apply
+[`20261008000000_founders_expo_payment_proofs.sql`](../supabase/migrations/20261008000000_founders_expo_payment_proofs.sql)
+before deploying the screenshot-required form. The public form never receives a storage URL or a
+ticket while payment is pending. Admins view the proof through an authenticated console endpoint,
+approve payment, and then send the shared stall pass to the lead and teammates. The pending and
+approved email recipient lists are recorded in `extra_data` for admin retries.
+
 **RLS:** enabled, 0 public policies after applying
 [`20261004000000_private_registration_reads.sql`](../supabase/migrations/20261004000000_private_registration_reads.sql).
 

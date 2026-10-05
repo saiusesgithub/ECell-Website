@@ -140,11 +140,23 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label class="expo-field sm:col-span-2">Team, startup, or idea name<input class="reg-input" name="team_name" maxlength="120" required /></label>
                   <label class="expo-field">Team size (including you)<select class="reg-input" name="team_size" id="expo-team-size" required><option value="1">1 member</option><option value="2">2 members</option><option value="3">3 members</option></select></label>
-                  <label class="expo-field expo-member" data-member="1" hidden>Team member 2 name<input class="reg-input" name="member_1" maxlength="120" /></label>
-                  <label class="expo-field expo-member" data-member="2" hidden>Team member 3 name<input class="reg-input" name="member_2" maxlength="120" /></label>
                 </div>
                 <label class="expo-confirm"><input type="checkbox" name="single_idea_per_stall" required /> I confirm this stall represents only one idea or startup.</label>
               </div>
+              {[1, 2].map((member) => (
+                <div class="detail-input-card expo-member mt-4" data-member={member} hidden>
+                  <div class="detail-input-card-head"><span><iconify-icon icon="solar:user-rounded-linear" width="20" height="20"></iconify-icon></span><div><p class="font-pixel">Teammate</p><h3>Team member {member + 1}</h3></div></div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label class="expo-field">Full name<input class="reg-input" name={`member_${member}_name`} maxlength="120" /></label>
+                    <label class="expo-field">Email address<input class="reg-input" name={`member_${member}_email`} type="email" maxlength="320" /></label>
+                    <label class="expo-field">Contact number<input class="reg-input" name={`member_${member}_phone`} type="tel" maxlength="40" /></label>
+                    <label class="expo-field">Year of study<select class="reg-input" name={`member_${member}_year_of_study`}><option value="">Select year</option><option>I</option><option>II</option><option>III</option><option>IV</option><option>I am not a student</option></select></label>
+                    <label class="expo-field">Branch<input class="reg-input" name={`member_${member}_branch`} maxlength="80" /></label>
+                    <label class="expo-field">Section<select class="reg-input" name={`member_${member}_section`}><option value="">Select section</option><option>A</option><option>B</option><option>C</option><option>D</option><option>Not applicable</option></select></label>
+                    <label class="expo-field sm:col-span-2">College / organization<input class="reg-input" name={`member_${member}_college`} maxlength="200" /></label>
+                  </div>
+                </div>
+              ))}
             </section>
 
             <section class="form-step" data-expo-step-panel="2">
@@ -154,6 +166,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
                 <p class="expo-payment-copy">Scan the QR code to pay ₹149, then enter your payment transaction ID before registering.</p>
                 <img class="expo-payment-qr" src="/images/events/founders-expo-payment-qr.png" alt="QR code to pay the ₹149 Founders Expo stall fee" width="240" height="240" />
                 <label class="expo-field expo-transaction">Payment transaction ID / UTR<input class="reg-input" name="payment_transaction_id" autocomplete="off" minlength="4" maxlength="120" placeholder="Enter your UPI transaction ID" required /><small>We will verify your payment using this reference.</small></label>
+                <label class="expo-field expo-transaction expo-upload-label">Payment screenshot<span class="expo-upload-control"><span>Choose screenshot</span><span id="expo-file-name">No file selected</span></span><input name="payment_screenshot" type="file" accept="image/png,image/jpeg,image/webp" required /><small>Upload a PNG, JPG, or WebP screenshot, up to 4 MB.</small></label>
               </div>
             </section>
 
@@ -162,7 +175,6 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
               <button type="button" id="expo-next-btn" class="step-btn step-btn-primary">Next</button>
               <button type="submit" id="expo-submit-btn" class="step-btn step-btn-primary hidden">Register one stall</button>
             </div>
-            <div id="expo-loading" class="expo-loading" role="status" aria-live="polite" hidden><span class="expo-spinner" aria-hidden="true"></span><span>Submitting registration…</span></div>
             <p id="expo-status" class="expo-status" role="alert"></p>
           </form>
         ) : (
@@ -364,6 +376,9 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
         )
       )}
     </div>
+    {canRegister && isFoundersExpo && (
+      <div id="expo-loading" class="expo-loading" role="status" aria-live="polite" hidden><span class="expo-spinner" aria-hidden="true"></span><span>Submitting registration…</span></div>
+    )}
   </section>
 </BaseLayout>
 
@@ -919,6 +934,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
   }
 
   .expo-field[hidden],
+  .expo-member[hidden],
   .expo-loading[hidden] {
     display: none;
   }
@@ -963,18 +979,68 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
     color: rgb(180, 166, 166);
   }
 
-  .expo-loading {
+  .expo-upload-label {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .expo-upload-control {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+    padding: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgb(209, 213, 219);
+  }
+
+  .expo-upload-control > span:first-child {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    background: rgba(127, 29, 29, 0.28);
+    color: white;
+  }
+
+  #expo-file-name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .expo-upload-label input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .expo-upload-label:focus-within .expo-upload-control {
+    border-color: rgba(248, 113, 113, 0.65);
+  }
+
+  .expo-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     gap: 0.8rem;
+    padding: 1.5rem;
+    background: rgba(8, 1, 1, 0.94);
     color: rgb(254, 202, 202);
     font-family: var(--font-display);
-    font-size: 0.9rem;
+    font-size: 1rem;
+    text-align: center;
   }
 
   .expo-spinner {
-    width: 1.35rem;
-    height: 1.35rem;
+    width: 2.5rem;
+    height: 2.5rem;
     flex: 0 0 auto;
     border: 2px solid rgba(254, 202, 202, 0.28);
     border-top-color: rgb(254, 202, 202);
@@ -1458,10 +1524,12 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
     const next = expoForm.querySelector<HTMLButtonElement>('#expo-next-btn');
     const submit = expoForm.querySelector<HTMLButtonElement>('#expo-submit-btn');
     const status = expoForm.querySelector<HTMLElement>('#expo-status');
-    const loading = expoForm.querySelector<HTMLElement>('#expo-loading');
+    const loading = document.getElementById('expo-loading');
     const teamSize = expoForm.querySelector<HTMLSelectElement>('#expo-team-size');
     const branch = expoForm.querySelector<HTMLSelectElement>('#expo-branch');
     const otherBranch = expoForm.querySelector<HTMLElement>('#expo-other-wrap');
+    const paymentFile = expoForm.querySelector<HTMLInputElement>('input[name="payment_screenshot"]');
+    const paymentFileName = expoForm.querySelector<HTMLElement>('#expo-file-name');
     let step = 0;
     let submitting = false;
 
@@ -1496,11 +1564,10 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       expoForm.querySelectorAll<HTMLElement>('.expo-member').forEach((field) => {
         const visible = Number(field.dataset.member) < count;
         field.hidden = !visible;
-        const input = field.querySelector<HTMLInputElement>('input');
-        if (input) {
-          input.required = visible;
-          if (!visible) input.value = '';
-        }
+        field.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select').forEach((control) => {
+          control.required = visible;
+          if (!visible) control.value = '';
+        });
       });
     };
 
@@ -1513,6 +1580,9 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
 
     teamSize?.addEventListener('change', syncMembers);
     branch?.addEventListener('change', syncBranch);
+    paymentFile?.addEventListener('change', () => {
+      if (paymentFileName) paymentFileName.textContent = paymentFile.files?.[0]?.name ?? 'No file selected';
+    });
     next?.addEventListener('click', () => { if (!submitting && validateStep(step)) setStep(step + 1); });
     back?.addEventListener('click', () => { if (!submitting) setStep(step - 1); });
     syncMembers();
@@ -1529,6 +1599,20 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       const data = new FormData(expoForm);
       const count = Number(data.get('team_size'));
       const branchValue = data.get('branch') === 'Other' ? data.get('branch_other') : data.get('branch');
+      const screenshot = data.get('payment_screenshot');
+      if (!(screenshot instanceof File) || screenshot.size === 0 || screenshot.size > 4 * 1024 * 1024) {
+        if (status) status.textContent = 'Upload a payment screenshot smaller than 4 MB.';
+        return;
+      }
+      const members = Array.from({ length: count - 1 }, (_, index) => {
+        const prefix = `member_${index + 1}_`;
+        return {
+          name: data.get(`${prefix}name`), email: data.get(`${prefix}email`),
+          phone: data.get(`${prefix}phone`), year_of_study: data.get(`${prefix}year_of_study`),
+          branch: data.get(`${prefix}branch`), section: data.get(`${prefix}section`),
+          college: data.get(`${prefix}college`),
+        };
+      });
       submitting = true;
       if (back) back.disabled = true;
       if (next) next.disabled = true;
@@ -1536,33 +1620,29 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       if (loading) loading.hidden = false;
 
       try {
+        const payload = new FormData();
+        payload.set('registration', JSON.stringify({
+          eventId: expoForm.dataset.eventId,
+          rows: [{
+            name: data.get('name'), email: data.get('email'), phone: data.get('phone'),
+            year_of_study: data.get('year_of_study'), branch: branchValue,
+            section: data.get('section'), college: data.get('college'), team_name: data.get('team_name'),
+            extra_data: {
+              form_variant: 'founders-expo', team_size: count, members,
+              member_names: members.map((member) => member.name),
+              payment_transaction_id: String(data.get('payment_transaction_id') ?? '').trim(),
+              single_idea_per_stall: data.get('single_idea_per_stall') === 'on',
+            },
+          }],
+        }));
+        payload.set('payment_screenshot', screenshot);
         const response = await fetch('/api/register-event', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            eventId: expoForm.dataset.eventId,
-            rows: [{
-              name: data.get('name'), email: data.get('email'), phone: data.get('phone'),
-              year_of_study: data.get('year_of_study'), branch: branchValue,
-              section: data.get('section'), college: data.get('college'), team_name: data.get('team_name'),
-              extra_data: {
-                form_variant: 'founders-expo', team_size: count,
-                member_names: Array.from({ length: count - 1 }, (_, index) => data.get(`member_${index + 1}`)),
-                payment_transaction_id: String(data.get('payment_transaction_id') ?? '').trim(),
-                single_idea_per_stall: data.get('single_idea_per_stall') === 'on',
-              },
-            }],
-          }),
+          body: payload,
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error ?? 'Could not complete registration.');
-        const ticketList = (result.registrations ?? [])
-          .map((item: { ticket_id: string }) => item.ticket_id).filter(Boolean).join(',');
-        if (!ticketList || !result.accessToken) throw new Error('Registration succeeded, but ticket details were unavailable. Please contact the organizers.');
-        let fragment = '';
-        try { sessionStorage.setItem(`ecell-ticket-access:${ticketList}`, result.accessToken); }
-        catch { fragment = `#access=${encodeURIComponent(result.accessToken)}`; }
-        window.location.href = `/events/${expoForm.dataset.eventSlug}/confirmation?tickets=${ticketList}${fragment}`;
+        window.location.href = `/events/${expoForm.dataset.eventSlug}/confirmation?pending=1&email=${result.pendingEmailSent ? 'sent' : 'delayed'}`;
       } catch (error) {
         if (status) status.textContent = error instanceof Error ? error.message : 'Could not complete registration.';
         submitting = false;
