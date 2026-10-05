@@ -1,7 +1,7 @@
 ---
 import teamData from '../../team.json';
 
-const members = teamData.core.slice(0, 8);
+const members = teamData.core.filter((member) => !['core-5', 'core-7'].includes(member.id));
 ---
 
 <section id="team" class="container mx-auto px-6 py-16 md:py-24 relative z-10">
@@ -109,35 +109,27 @@ const members = teamData.core.slice(0, 8);
   }
 
   .team-card-deck.is-visible .team-deck-card-1 {
-    transform: translate3d(-455px, 28px, 0) rotate(-10deg);
+    transform: translate3d(-330px, 28px, 0) rotate(-9deg);
   }
 
   .team-card-deck.is-visible .team-deck-card-2 {
-    transform: translate3d(-320px, -34px, 0) rotate(-6deg);
+    transform: translate3d(-200px, -34px, 0) rotate(-5deg);
   }
 
   .team-card-deck.is-visible .team-deck-card-3 {
-    transform: translate3d(-190px, 24px, 0) rotate(-3deg);
+    transform: translate3d(-70px, 24px, 0) rotate(-2deg);
   }
 
   .team-card-deck.is-visible .team-deck-card-4 {
-    transform: translate3d(-64px, -38px, 0) rotate(-1deg);
+    transform: translate3d(70px, -38px, 0) rotate(2deg);
   }
 
   .team-card-deck.is-visible .team-deck-card-5 {
-    transform: translate3d(64px, 24px, 0) rotate(1deg);
+    transform: translate3d(200px, 24px, 0) rotate(5deg);
   }
 
   .team-card-deck.is-visible .team-deck-card-6 {
-    transform: translate3d(190px, -36px, 0) rotate(4deg);
-  }
-
-  .team-card-deck.is-visible .team-deck-card-7 {
-    transform: translate3d(320px, 26px, 0) rotate(7deg);
-  }
-
-  .team-card-deck.is-visible .team-deck-card-8 {
-    transform: translate3d(455px, -26px, 0) rotate(10deg);
+    transform: translate3d(330px, -36px, 0) rotate(9deg);
   }
 
   .team-deck-card::before,
@@ -190,35 +182,27 @@ const members = teamData.core.slice(0, 8);
     }
 
     .team-card-deck.is-visible .team-deck-card-1 {
-      transform: translate3d(-315px, 26px, 0) rotate(-9deg);
+      transform: translate3d(-225px, 26px, 0) rotate(-9deg);
     }
 
     .team-card-deck.is-visible .team-deck-card-2 {
-      transform: translate3d(-225px, -32px, 0) rotate(-6deg);
+      transform: translate3d(-135px, -32px, 0) rotate(-5deg);
     }
 
     .team-card-deck.is-visible .team-deck-card-3 {
-      transform: translate3d(-135px, 22px, 0) rotate(-3deg);
+      transform: translate3d(-45px, 22px, 0) rotate(-2deg);
     }
 
     .team-card-deck.is-visible .team-deck-card-4 {
-      transform: translate3d(-45px, -36px, 0) rotate(-1deg);
+      transform: translate3d(45px, -36px, 0) rotate(2deg);
     }
 
     .team-card-deck.is-visible .team-deck-card-5 {
-      transform: translate3d(45px, 22px, 0) rotate(1deg);
+      transform: translate3d(135px, 22px, 0) rotate(5deg);
     }
 
     .team-card-deck.is-visible .team-deck-card-6 {
-      transform: translate3d(135px, -32px, 0) rotate(4deg);
-    }
-
-    .team-card-deck.is-visible .team-deck-card-7 {
-      transform: translate3d(225px, 24px, 0) rotate(7deg);
-    }
-
-    .team-card-deck.is-visible .team-deck-card-8 {
-      transform: translate3d(315px, -24px, 0) rotate(9deg);
+      transform: translate3d(225px, -32px, 0) rotate(9deg);
     }
   }
 

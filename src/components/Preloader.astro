@@ -81,6 +81,12 @@
     display: block;
   }
 
+  #preloader.is-done {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 350ms ease, visibility 350ms ease;
+  }
+
   .flight-path {
     fill: none;
     stroke: #ffffff;
@@ -113,6 +119,7 @@
     opacity: 0;
     transform: translateY(14px);
     transform-box: fill-box;
+    transition: opacity 450ms ease, transform 450ms ease;
   }
 
   .text-vjit {
@@ -124,6 +131,13 @@
     opacity: 0;
     transform: translateY(14px);
     transform-box: fill-box;
+    transition: opacity 450ms ease 90ms, transform 450ms ease 90ms;
+  }
+
+  #preloader.show-wordmark .text-cell,
+  #preloader.show-wordmark .text-vjit {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   #rocket {
@@ -133,131 +147,54 @@
   }
 </style>
 
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" is:inline></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/MotionPathPlugin.min.js" is:inline></script>
-
-<script is:client>
+<script is:inline>
   (() => {
-    const gsapGlobal = window.gsap;
-    const MotionPathPluginGlobal = window.MotionPathPlugin;
-
-    if (!gsapGlobal || !MotionPathPluginGlobal) {
+    const preloader = document.getElementById("preloader");
+    const finish = () => {
       document.body.classList.remove("loading");
+      preloader?.classList.add("is-done");
+      window.setTimeout(() => preloader?.remove(), 400);
+    };
+    if (!preloader || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      finish();
       return;
     }
-
-    gsapGlobal.registerPlugin(MotionPathPluginGlobal);
-
-    const preloader = document.getElementById("preloader");
     const flightPath = document.getElementById("flightPath");
     const flightPathReveal = document.getElementById("flightPathReveal");
     const rocket = document.getElementById("rocket");
-    const revealTargets = ["#cellText", "#vjitText"];
-    const ROCKET_ROTATION_OFFSET = 36;
-    const FLIGHT_MIDPOINT = 0.68;
-    const FLIGHT_PHASE_ONE_DURATION = 4.2;
-    const FLIGHT_PHASE_TWO_DURATION = 1.25;
-
-    if (!preloader || !flightPath || !flightPathReveal || !rocket) {
-      document.body.classList.remove("loading");
+    if (!flightPath || !flightPathReveal || !rocket) {
+      finish();
       return;
     }
-
     const totalLength = flightPathReveal.getTotalLength();
+    const duration = 2600;
+    const startDistance = Array.from({ length: 101 }, (_, index) => totalLength * index / 100)
+      .find((distance) => flightPath.getPointAtLength(distance).x >= -50) ?? 0;
+    flightPathReveal.style.strokeDasharray = String(totalLength);
+    flightPathReveal.style.strokeDashoffset = String(totalLength - startDistance);
 
-    gsapGlobal.set(flightPathReveal, {
-      strokeDasharray: totalLength,
-      strokeDashoffset: totalLength
-    });
-    gsapGlobal.set(revealTargets, { autoAlpha: 0, y: 14 });
-    gsapGlobal.set(rocket, { transformOrigin: "50% 50%" });
-    gsapGlobal.set(rocket, {
-      motionPath: {
-        path: "#flightPath",
-        align: "#flightPath",
-        alignOrigin: [0.5, 0.5],
-        autoRotate: ROCKET_ROTATION_OFFSET,
-        start: 0,
-        end: 0
+    const moveRocket = (distance) => {
+      const point = flightPath.getPointAtLength(distance);
+      const next = flightPath.getPointAtLength(Math.min(totalLength, distance + 3));
+      const angle = Math.atan2(next.y - point.y, next.x - point.x) * 180 / Math.PI + 36;
+      rocket.setAttribute("transform", `translate(${point.x - 25}, ${point.y - 25}) rotate(${angle}, 25, 25)`);
+    };
+    moveRocket(startDistance);
+    const startTime = performance.now();
+    const animate = (now) => {
+      const progress = Math.min(1, (now - startTime) / duration);
+      const eased = 0.5 - Math.cos(Math.PI * progress) / 2;
+      const distance = startDistance + (totalLength - startDistance) * eased;
+      flightPathReveal.style.strokeDashoffset = String(totalLength - distance);
+      moveRocket(distance);
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        preloader.classList.add("show-wordmark");
+        window.setTimeout(finish, 650);
       }
-    });
-
-    gsapGlobal
-      .timeline({
-        defaults: { ease: "power2.out" },
-        onComplete: () => {
-          preloader.style.display = "none";
-          document.body.classList.remove("loading");
-        }
-      })
-      .to(
-        flightPathReveal,
-        {
-          duration: FLIGHT_PHASE_ONE_DURATION,
-          ease: "sine.inOut",
-          strokeDashoffset: totalLength * (1 - FLIGHT_MIDPOINT)
-        },
-        0
-      )
-      .to(
-        rocket,
-        {
-          duration: FLIGHT_PHASE_ONE_DURATION,
-          ease: "sine.inOut",
-          motionPath: {
-            path: "#flightPath",
-            align: "#flightPath",
-            alignOrigin: [0.5, 0.5],
-            autoRotate: ROCKET_ROTATION_OFFSET,
-            start: 0,
-            end: FLIGHT_MIDPOINT
-          }
-        },
-        0
-      )
-      .to(
-        flightPathReveal,
-        {
-          duration: FLIGHT_PHASE_TWO_DURATION,
-          ease: "power2.inOut",
-          strokeDashoffset: 0
-        },
-        ">"
-      )
-      .to(
-        rocket,
-        {
-          duration: FLIGHT_PHASE_TWO_DURATION,
-          ease: "power2.inOut",
-          motionPath: {
-            path: "#flightPath",
-            align: "#flightPath",
-            alignOrigin: [0.5, 0.5],
-            autoRotate: ROCKET_ROTATION_OFFSET,
-            start: FLIGHT_MIDPOINT,
-            end: 1
-          }
-        },
-        "<"
-      )
-      .to(
-        revealTargets,
-        {
-          duration: 0.55,
-          autoAlpha: 1,
-          y: 0,
-          stagger: 0.1
-        },
-        ">0.2"
-      )
-      .to(
-        preloader,
-        {
-          duration: 0.45,
-          autoAlpha: 0,
-          ease: "power1.out"
-        },
-        ">0.2"
-      );
+    };
+    requestAnimationFrame(animate);
   })();
 </script>
+<noscript><style>#preloader { display: none !important; }</style></noscript>
