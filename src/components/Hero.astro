@@ -119,6 +119,11 @@ const {
   }
 
   .hero-fluid-rise {
+    transform: translateY(360px);
+    transition: transform 1350ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  :global(body.hero-reveal) .hero-fluid-rise {
     transform: translateY(0);
   }
 
@@ -172,6 +177,7 @@ const {
 
     .hero-fluid-rise {
       transform: none;
+      transition: none;
     }
   }
 
@@ -201,11 +207,27 @@ const {
     .hero-mobile-title {
       display: block;
       margin: 0 auto 1.25rem;
-      color: #fff;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(255, 240, 240, 0.75);
+      background: linear-gradient(#fff, #fff) bottom / 100% 0% no-repeat;
+      background-clip: text;
+      -webkit-background-clip: text;
+      transition: background-size 1350ms cubic-bezier(0.22, 1, 0.36, 1);
       font-family: var(--font-hero);
       font-size: 2.5rem;
       line-height: 1.05;
       text-wrap: balance;
+    }
+
+    :global(body.hero-reveal) .hero-mobile-title {
+      background-size: 100% 100%;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .hero-mobile-title {
+        background-size: 100% 100%;
+        transition: none;
+      }
     }
 
     .hero-copy {
@@ -214,3 +236,4 @@ const {
     }
   }
 </style>
+<noscript><style>.hero-fluid-rise { transform: none !important; } .hero-mobile-title { background-size: 100% 100% !important; }</style></noscript>

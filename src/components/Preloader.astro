@@ -150,10 +150,16 @@
 <script is:inline>
   (() => {
     const preloader = document.getElementById("preloader");
+    let finished = false;
     const finish = () => {
+      if (finished) return;
+      finished = true;
       document.body.classList.remove("loading");
       preloader?.classList.add("is-done");
-      window.setTimeout(() => preloader?.remove(), 400);
+      window.setTimeout(() => {
+        preloader?.remove();
+        document.body.classList.add("hero-reveal");
+      }, 400);
     };
     if (!preloader || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       finish();
