@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const { data: registrations, error } = await supabaseAdmin
     .from('registrations')
-    .select('name, email, phone, ticket_id, team_name, payment_verified, events (slug, title, date, time, venue, whatsapp_group_link)')
+    .select('name, email, phone, ticket_id, team_name, events (slug, title, date, time, venue, whatsapp_group_link)')
     .in('ticket_id', ticketIds);
 
   if (error) {
@@ -37,10 +37,5 @@ export const POST: APIRoute = async ({ request }) => {
   if (!registrations || registrations.length !== ticketIds.length) {
     return json({ error: 'One or more tickets could not be found.' }, 404);
   }
-  if (registrations.some((registration) =>
-    (registration.events as any)?.slug === 'founders-expo-26' && !registration.payment_verified)) {
-    return json({ error: 'This stall is still pending approval.' }, 403);
-  }
-
-  return json({ registrations: registrations.map(({ payment_verified, ...registration }) => registration) });
+  return json({ registrations });
 };

@@ -8,8 +8,6 @@ import { sendFoundersExpoNotifications } from '../../lib/foundersExpoMail.js';
 const MAX_REQUEST_BYTES = 256 * 1024;
 const MAX_ATTENDEES = 100;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_PAYMENT_IMAGE_BYTES = 4 * 1024 * 1024;
-const PAYMENT_BUCKET = 'founders-expo-payments';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -27,27 +25,12 @@ const optionalText = (value: unknown, field: string, maxLength = 200) => {
 
 export const POST: APIRoute = async ({ request }) => {
   let body: any;
-  let paymentScreenshot: File | null = null;
   try {
-    if (request.headers.get('content-type')?.includes('multipart/form-data')) {
-      if (Number(request.headers.get('content-length')) > MAX_PAYMENT_IMAGE_BYTES + MAX_REQUEST_BYTES) {
-        return json({ error: 'Registration request is too large.' }, 413);
-      }
-      const formData = await request.formData();
-      const payload = formData.get('registration');
-      const image = formData.get('payment_screenshot');
-      if (typeof payload !== 'string' || new TextEncoder().encode(payload).byteLength > MAX_REQUEST_BYTES) {
-        return json({ error: 'Invalid registration request.' }, 400);
-      }
-      body = JSON.parse(payload);
-      paymentScreenshot = image instanceof File ? image : null;
-    } else {
-      const rawBody = await request.text();
-      if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
-        return json({ error: 'Registration request is too large.' }, 413);
-      }
-      body = JSON.parse(rawBody);
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
+      return json({ error: 'Registration request is too large.' }, 413);
     }
+    body = JSON.parse(rawBody);
   } catch {
     return json({ error: 'Invalid registration request.' }, 400);
   }
@@ -72,31 +55,15 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (event.slug === 'founders-expo-26') {
     if (rows.length !== 1) return json({ error: 'Submit exactly one registration per stall.' }, 400);
-    if (!paymentScreenshot || paymentScreenshot.size === 0 || paymentScreenshot.size > MAX_PAYMENT_IMAGE_BYTES) {
-      return json({ error: 'A payment screenshot under 4 MB is required.' }, 400);
-    }
-    const imageTypes: Record<string, { extension: string; valid: (bytes: Uint8Array) => boolean }> = {
-      'image/png': { extension: 'png', valid: (bytes) => bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 },
-      'image/jpeg': { extension: 'jpg', valid: (bytes) => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff },
-      'image/webp': { extension: 'webp', valid: (bytes) => String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP' },
-    };
-    const imageType = imageTypes[paymentScreenshot.type];
-    const signature = new Uint8Array(await paymentScreenshot.slice(0, 12).arrayBuffer());
-    if (!imageType || !imageType.valid(signature)) {
-      return json({ error: 'Upload a valid PNG, JPG, or WebP payment screenshot.' }, 400);
-    }
     const row = rows[0];
-    let uploadedProofPath: string | null = null;
     try {
       const teamSize = Number(row?.extra_data?.team_size);
       const submittedMembers = row?.extra_data?.members;
       const teamName = optionalText(row?.team_name, 'Idea or startup name', 120);
-      const paymentTransactionId = optionalText(row?.extra_data?.payment_transaction_id, 'Payment transaction ID', 120);
       if (!teamName || !Number.isInteger(teamSize) || teamSize < 1 || teamSize > 3 ||
           !Array.isArray(submittedMembers) || submittedMembers.length !== teamSize - 1 ||
-          !paymentTransactionId || paymentTransactionId.length < 4 ||
           row?.extra_data?.single_idea_per_stall !== true) {
-        return json({ error: 'Provide the idea name, valid team details, payment transaction ID, and one-idea-per-stall confirmation.' }, 400);
+        return json({ error: 'Provide the idea name, valid team details, and one-idea-per-stall confirmation.' }, 400);
       }
       const name = optionalText(row.name, 'Name', 120);
       const email = optionalText(row.email, 'Email', 320)?.toLowerCase() ?? null;
@@ -124,14 +91,6 @@ export const POST: APIRoute = async ({ request }) => {
       if (new Set([email, ...members.map((member) => member.email)]).size !== teamSize) {
         return json({ error: 'Every team member must use a different email address.' }, 400);
       }
-      const proofPath = `${eventId}/${crypto.randomUUID()}.${imageType.extension}`;
-      const { error: uploadError } = await supabaseAdmin.storage.from(PAYMENT_BUCKET)
-        .upload(proofPath, await paymentScreenshot.arrayBuffer(), { contentType: paymentScreenshot.type, upsert: false });
-      if (uploadError) {
-        console.error('Payment screenshot upload failed:', uploadError.message);
-        return json({ error: 'Could not upload the payment screenshot. Please try again.' }, 500);
-      }
-      uploadedProofPath = proofPath;
       const { data: registrations, error } = await supabaseAdmin.rpc('register_founders_expo_stall', {
         p_event_id: eventId,
         p_row: {
@@ -140,13 +99,10 @@ export const POST: APIRoute = async ({ request }) => {
           team_name: teamName,
           extra_data: { form_variant: 'founders-expo', team_size: teamSize,
             members, member_names: members.map((member) => member.name),
-            payment_transaction_id: paymentTransactionId, payment_screenshot_path: proofPath,
             single_idea_per_stall: true },
         },
       });
       if (error) {
-        await supabaseAdmin.storage.from(PAYMENT_BUCKET).remove([proofPath]);
-        uploadedProofPath = null;
         if (error.message.includes('REGISTRATION_CLOSED')) return json({ error: 'Registration has closed for this event.' }, 409);
         if (error.message.includes('CAPACITY_REACHED')) return json({ error: 'All available stalls have been registered.' }, 409);
         if (error.message.includes('INVALID_STALL')) return json({ error: 'The stall details are invalid. Check the team size and required fields.' }, 400);
@@ -155,23 +111,21 @@ export const POST: APIRoute = async ({ request }) => {
         console.error('Founders Expo registration failed:', error.code, error.message);
         return json({ error: 'Could not complete registration.' }, 500);
       }
-      uploadedProofPath = null;
       const ticketId = registrations?.[0]?.ticket_id;
       if (!ticketId) return json({ error: 'Registration saved, but confirmation is unavailable. Contact the organizers.' }, 500);
       const { data: savedRegistration } = await supabaseAdmin.from('registrations')
         .select('id').eq('ticket_id', ticketId).single();
-      let pendingEmailSent = false;
+      let ticketEmailSent = false;
       if (savedRegistration?.id) {
         try {
-          const delivery = await sendFoundersExpoNotifications(savedRegistration.id, 'pending', new URL(request.url).origin);
-          pendingEmailSent = delivery.failed.length === 0;
+          const delivery = await sendFoundersExpoNotifications(savedRegistration.id, new URL(request.url).origin);
+          ticketEmailSent = delivery.failed.length === 0;
         } catch (mailError) {
-          console.error('Founders Expo pending email failed:', mailError);
+          console.error('Founders Expo ticket email failed:', mailError);
         }
       }
-      return json({ pending: true, pendingEmailSent });
+      return json({ ticketId, accessToken: createTicketAccessToken([ticketId]), ticketEmailSent });
     } catch (validationError) {
-      if (uploadedProofPath) await supabaseAdmin.storage.from(PAYMENT_BUCKET).remove([uploadedProofPath]);
       return json({ error: validationError instanceof Error ? validationError.message : 'Invalid registration details.' }, 400);
     }
   }

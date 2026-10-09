@@ -89,6 +89,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       <p class="text-gray-400 font-inter text-sm">
         {formattedDate}{event.time ? ` · ${event.time}` : ''} · {event.venue}
       </p>
+      {isFoundersExpo && <p class="text-red-200 font-inter text-sm mt-2">Free registration. Your stall pass is issued immediately.</p>}
     </div>
 
     <div class="registration-shell noise-overlay p-5 md:p-8">
@@ -102,7 +103,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
         isFoundersExpo ? (
           <form id="founders-expo-form" class="flex flex-col gap-7" data-event-id={event.id} data-event-slug={event.slug || slug} novalidate>
             <div class="stepper-shell expo-stepper" aria-label="Registration progress">
-              {['Lead details', 'Team members', 'Payment'].map((step, index) => (
+              {['Lead details', 'Team members'].map((step, index) => (
                 <div class="stepper-item" data-expo-step-indicator={index}>
                   <span>{index + 1}</span><p>{step}</p>
                 </div>
@@ -157,17 +158,6 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
                   </div>
                 </div>
               ))}
-            </section>
-
-            <section class="form-step" data-expo-step-panel="2">
-              <div class="step-card-heading"><p class="font-pixel">Step 03</p><h2>Payment</h2></div>
-              <div class="detail-input-card">
-                <div class="detail-input-card-head"><span><iconify-icon icon="solar:qr-code-linear" width="20" height="20"></iconify-icon></span><div><p class="font-pixel">Stall fee</p><h3>₹149 per stall</h3></div></div>
-                <p class="expo-payment-copy">Scan the QR code to pay ₹149, then enter your payment transaction ID before registering.</p>
-                <img class="expo-payment-qr" src="/images/events/founders-expo-payment-qr.png" alt="QR code to pay the ₹149 Founders Expo stall fee" width="240" height="240" />
-                <label class="expo-field expo-transaction">Payment transaction ID / UTR<input class="reg-input" name="payment_transaction_id" autocomplete="off" minlength="4" maxlength="120" placeholder="Enter your UPI transaction ID" required /><small>We will verify your payment using this reference.</small></label>
-                <label class="expo-field expo-transaction expo-upload-label">Payment screenshot<span class="expo-upload-control"><span>Choose screenshot</span><span id="expo-file-name">No file selected</span></span><input name="payment_screenshot" type="file" accept="image/png,image/jpeg,image/webp" required /><small>Upload a PNG, JPG, or WebP screenshot, up to 4 MB.</small></label>
-              </div>
             </section>
 
             <div class="step-actions">
@@ -954,73 +944,6 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
     accent-color: #e74739;
   }
 
-  .expo-payment-copy {
-    margin-bottom: 1rem;
-    color: rgb(209, 213, 219);
-    font-family: var(--font-display);
-    font-size: 0.9rem;
-  }
-
-  .expo-payment-qr {
-    width: 240px;
-    max-width: 100%;
-    aspect-ratio: 1;
-    padding: 8px;
-    background: white;
-    border-radius: 4px;
-  }
-
-  .expo-transaction {
-    max-width: 34rem;
-    margin-top: 1.1rem;
-  }
-
-  .expo-transaction small {
-    color: rgb(180, 166, 166);
-  }
-
-  .expo-upload-label {
-    position: relative;
-    cursor: pointer;
-  }
-
-  .expo-upload-control {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.7rem;
-    min-width: 0;
-    padding: 0.65rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
-    color: rgb(209, 213, 219);
-  }
-
-  .expo-upload-control > span:first-child {
-    padding: 0.4rem 0.6rem;
-    border: 1px solid rgba(248, 113, 113, 0.35);
-    background: rgba(127, 29, 29, 0.28);
-    color: white;
-  }
-
-  #expo-file-name {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-
-  .expo-upload-label input[type="file"] {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-  }
-
-  .expo-upload-label:focus-within .expo-upload-control {
-    border-color: rgba(248, 113, 113, 0.65);
-  }
-
   .expo-loading {
     position: fixed;
     inset: 0;
@@ -1528,8 +1451,6 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
     const teamSize = expoForm.querySelector<HTMLSelectElement>('#expo-team-size');
     const branch = expoForm.querySelector<HTMLSelectElement>('#expo-branch');
     const otherBranch = expoForm.querySelector<HTMLElement>('#expo-other-wrap');
-    const paymentFile = expoForm.querySelector<HTMLInputElement>('input[name="payment_screenshot"]');
-    const paymentFileName = expoForm.querySelector<HTMLElement>('#expo-file-name');
     let step = 0;
     let submitting = false;
 
@@ -1580,9 +1501,6 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
 
     teamSize?.addEventListener('change', syncMembers);
     branch?.addEventListener('change', syncBranch);
-    paymentFile?.addEventListener('change', () => {
-      if (paymentFileName) paymentFileName.textContent = paymentFile.files?.[0]?.name ?? 'No file selected';
-    });
     next?.addEventListener('click', () => { if (!submitting && validateStep(step)) setStep(step + 1); });
     back?.addEventListener('click', () => { if (!submitting) setStep(step - 1); });
     syncMembers();
@@ -1599,11 +1517,6 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       const data = new FormData(expoForm);
       const count = Number(data.get('team_size'));
       const branchValue = data.get('branch') === 'Other' ? data.get('branch_other') : data.get('branch');
-      const screenshot = data.get('payment_screenshot');
-      if (!(screenshot instanceof File) || screenshot.size === 0 || screenshot.size > 4 * 1024 * 1024) {
-        if (status) status.textContent = 'Upload a payment screenshot smaller than 4 MB.';
-        return;
-      }
       const members = Array.from({ length: count - 1 }, (_, index) => {
         const prefix = `member_${index + 1}_`;
         return {
@@ -1620,8 +1533,7 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
       if (loading) loading.hidden = false;
 
       try {
-        const payload = new FormData();
-        payload.set('registration', JSON.stringify({
+        const payload = {
           eventId: expoForm.dataset.eventId,
           rows: [{
             name: data.get('name'), email: data.get('email'), phone: data.get('phone'),
@@ -1630,19 +1542,25 @@ const registrationSteps = isTeamEvent ? ['Details', 'Team', 'Confirm'] : ['Detai
             extra_data: {
               form_variant: 'founders-expo', team_size: count, members,
               member_names: members.map((member) => member.name),
-              payment_transaction_id: String(data.get('payment_transaction_id') ?? '').trim(),
               single_idea_per_stall: data.get('single_idea_per_stall') === 'on',
             },
           }],
-        }));
-        payload.set('payment_screenshot', screenshot);
+        };
         const response = await fetch('/api/register-event', {
           method: 'POST',
-          body: payload,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error ?? 'Could not complete registration.');
-        window.location.href = `/events/${expoForm.dataset.eventSlug}/confirmation?pending=1&email=${result.pendingEmailSent ? 'sent' : 'delayed'}`;
+        const ticketList = result.ticketId;
+        let fallbackFragment = '';
+        try {
+          sessionStorage.setItem(`ecell-ticket-access:${ticketList}`, result.accessToken);
+        } catch {
+          fallbackFragment = `#access=${encodeURIComponent(result.accessToken)}`;
+        }
+        window.location.href = `/events/${expoForm.dataset.eventSlug}/confirmation?tickets=${ticketList}&email=${result.ticketEmailSent ? 'sent' : 'delayed'}${fallbackFragment}`;
       } catch (error) {
         if (status) status.textContent = error instanceof Error ? error.message : 'Could not complete registration.';
         submitting = false;

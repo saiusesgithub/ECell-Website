@@ -33,6 +33,9 @@ const formattedDate = new Date(event.date).toLocaleDateString('en-IN', {
 
 const registrationStatus = getRegistrationStatus(event, registrationCount ?? 0);
 const isFoundersExpo = event.slug === 'founders-expo-26';
+const requirements = isFoundersExpo
+  ? 'Registration is free. Teams may have up to 3 members; individuals are welcome. One stall can represent only one idea/startup.'
+  : event.requirements;
 const deadlinePassed = registrationStatus.deadlinePassed;
 const canRegister = registrationStatus.canRegister;
 
@@ -153,10 +156,16 @@ const chiefGuest =
         <p class="event-info-kicker">Venue</p>
         <p>{event.venue}</p>
       </div>
-      {event.is_paid && (
+      {(event.is_paid && !isFoundersExpo) && (
         <div class="event-info-card glass noise-overlay p-5">
           <p class="event-info-kicker">Price</p>
-          <p>{isFoundersExpo ? '₹149 per stall' : `Rs. ${event.price}`}</p>
+          <p>Rs. {event.price}</p>
+        </div>
+      )}
+      {isFoundersExpo && (
+        <div class="event-info-card glass noise-overlay p-5">
+          <p class="event-info-kicker">Entry</p>
+          <p>Free</p>
         </div>
       )}
       {event.prize_pool && (
@@ -184,12 +193,12 @@ const chiefGuest =
       <p class="event-content-card mb-8"><strong>One stall can represent only one idea or startup.</strong> Register each idea separately. Stall capacity is unlimited while registration remains open.</p>
     )}
 
-    {(event.requirements || event.prerequisites) && (
+    {(requirements || event.prerequisites) && (
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-        {event.requirements && (
+        {requirements && (
           <div class="event-content-card">
             <h3>Requirements</h3>
-            <p>{event.requirements}</p>
+            <p>{requirements}</p>
           </div>
         )}
         {event.prerequisites && (

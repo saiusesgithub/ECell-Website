@@ -14,8 +14,6 @@ if (error) {
 }
 
 const eventTitle = event?.title ?? 'Event';
-const isPendingExpo = slug === 'founders-expo-26' && Astro.url.searchParams.get('pending') === '1';
-const pendingEmailDelayed = Astro.url.searchParams.get('email') === 'delayed';
 ---
 
 <BaseLayout title={`E-Cell VJIT | Registered for ${eventTitle}`}>
@@ -23,16 +21,7 @@ const pendingEmailDelayed = Astro.url.searchParams.get('email') === 'delayed';
   <Navbar />
 
   <section class="container mx-auto px-6 py-16 md:py-20 relative z-10 max-w-4xl">
-    {isPendingExpo && (
-      <div id="pending-state" class="text-center max-w-xl mx-auto">
-        <span class="events-ghost-label">Payment review</span>
-        <h1 class="text-3xl md:text-4xl font-jakarta font-semibold tracking-tight mt-5 mb-4">Registration received</h1>
-        <p class="text-gray-300 font-inter leading-relaxed">Your Founders Expo stall is pending manual payment approval. Watch for a pending-registration email to the team; this is not a ticket yet. After approval, we will email the shared stall pass to every registered team member.</p>
-        {pendingEmailDelayed && <p class="text-amber-200 font-inter mt-4">The confirmation email is delayed. Your registration was saved; the organizers can retry delivery from the admin dashboard.</p>}
-        <a href="/events" class="inline-block mt-6 text-sm font-inter text-gray-300 hover:text-white">Back to Events</a>
-      </div>
-    )}
-    <div id="loading-state" class:list={['text-center', { hidden: isPendingExpo }]}>
+    <div id="loading-state" class="text-center">
       <p class="text-gray-300 font-inter">Loading your tickets...</p>
     </div>
 
@@ -504,7 +493,6 @@ const pendingEmailDelayed = Astro.url.searchParams.get('email') === 'delayed';
     await QRCode.toCanvas(canvas, ticketId, { width: 220, margin: 1 });
   }
 
-  if (!document.getElementById('pending-state')) {
   const ticketIds = (new URLSearchParams(window.location.search).get('tickets') ?? '')
     .split(',')
     .map((id) => id.trim())
@@ -550,7 +538,9 @@ const pendingEmailDelayed = Astro.url.searchParams.get('email') === 'delayed';
       }
       if (subtextEl) {
         subtextEl.textContent =
-          registrations.length === 1
+          window.location.pathname.split('/')[2] === 'founders-expo-26'
+            ? 'This is one shared stall pass for your team. Bring its QR code to check in at the venue.'
+            : registrations.length === 1
             ? 'Check your email for a copy of this confirmation. Bring the QR code below to check in at the venue.'
             : "Each teammate's ticket is below — everyone should bring their own individual QR code to check in at the venue.";
       }
@@ -622,27 +612,33 @@ const pendingEmailDelayed = Astro.url.searchParams.get('email') === 'delayed';
         }
       }
 
-      if (emailStatus) emailStatus.textContent = 'Emailing your ticket...';
-      try {
-        const response = await fetch('/api/send-ticket-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken }),
-        });
-        const result = await response.json();
-        if (response.ok && result.sent?.length) {
-          if (emailStatus) emailStatus.textContent = 'Ticket emailed to you as well.';
-        } else if (emailStatus) {
-          emailStatus.textContent = '';
+      if (window.location.pathname.split('/')[2] === 'founders-expo-26') {
+        const emailState = new URLSearchParams(window.location.search).get('email');
+        if (emailStatus) emailStatus.textContent = emailState === 'sent'
+          ? 'Stall pass emailed to the lead and team members.'
+          : 'Your pass is ready here. Email delivery is delayed; the organizers can retry it.';
+      } else {
+        if (emailStatus) emailStatus.textContent = 'Emailing your ticket...';
+        try {
+          const response = await fetch('/api/send-ticket-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken }),
+          });
+          const result = await response.json();
+          if (response.ok && result.sent?.length) {
+            if (emailStatus) emailStatus.textContent = 'Ticket emailed to you as well.';
+          } else if (emailStatus) {
+            emailStatus.textContent = '';
+          }
+        } catch {
+          if (emailStatus) emailStatus.textContent = '';
         }
-      } catch {
-        if (emailStatus) emailStatus.textContent = '';
       }
     }
     } catch (error) {
       console.error('Ticket confirmation failed:', error);
       showError();
     }
-  }
   }
 </script>
