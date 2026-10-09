@@ -153,14 +153,16 @@ transaction. Its execute grant is limited to `service_role`. Event pages and the
 `get_event_registration_counts()` to retrieve aggregate counts without transferring registration rows.
 The functions are created by [`20261003000000_atomic_event_registration.sql`](../supabase/migrations/20261003000000_atomic_event_registration.sql).
 
-Founders Expo keeps one `registrations` row per stall. Its `extra_data` contains the teammate contact
-details, payment transaction ID, and a path to the payment screenshot in the private
-`founders-expo-payments` Storage bucket. Apply
-[`20261008000000_founders_expo_payment_proofs.sql`](../supabase/migrations/20261008000000_founders_expo_payment_proofs.sql)
-before deploying the screenshot-required form. The public form never receives a storage URL or a
-ticket while payment is pending. Admins view the proof through an authenticated console endpoint,
-approve payment, and then send the shared stall pass to the lead and teammates. The pending and
-approved email recipient lists are recorded in `extra_data` for admin retries.
+Founders Expo keeps one `registrations` row per stall, with teammate contact details in `extra_data`.
+Apply [`20261009000000_founders_expo_free.sql`](../supabase/migrations/20261009000000_founders_expo_free.sql)
+before deploying the free-registration flow. It sets the event price to zero, marks existing stall
+registrations free, and makes future stall inserts free in the registration RPC. A new registration
+immediately receives one shared stall pass; the lead and teammates are emailed that pass. Email
+recipient progress is stored in `extra_data.approved_email_sent_to` for compatibility with older
+registrations and admin retries. Previously submitted payment references and screenshots remain in
+the database/private `founders-expo-payments` Storage bucket as historical data; the free form no
+longer asks for either. Existing registrants who did not receive a pass need the admin's **Retry pass
+email** action; the migration does not send emails.
 
 **RLS:** enabled, 0 public policies after applying
 [`20261004000000_private_registration_reads.sql`](../supabase/migrations/20261004000000_private_registration_reads.sql).
