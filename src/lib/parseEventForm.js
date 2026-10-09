@@ -79,6 +79,7 @@ export function eventFormDraft(formData) {
 export function parseEventForm(formData) {
   const deadlineInput = str(formData, 'registration_deadline');
   const slug = str(formData, 'slug');
+  const isFoundersExpo = slug === 'founders-expo-26';
   const registrationDeadline = deadlineInput && slug === 'founders-expo-26'
     ? new Date(`${deadlineInput}:00+05:30`).toISOString().slice(0, 19).replace('T', ' ')
     : deadlineInput;
@@ -104,9 +105,9 @@ export function parseEventForm(formData) {
     is_team_event: bool(formData, 'is_team_event'),
     min_team_size: num(formData, 'min_team_size'),
     max_team_size: num(formData, 'max_team_size'),
-    is_paid: bool(formData, 'is_paid'),
-    price: num(formData, 'price'),
-    payment_link: str(formData, 'payment_link'),
+    is_paid: isFoundersExpo ? false : bool(formData, 'is_paid'),
+    price: isFoundersExpo ? 0 : num(formData, 'price'),
+    payment_link: isFoundersExpo ? null : str(formData, 'payment_link'),
     prize_pool: str(formData, 'prize_pool'),
     poster_url: str(formData, 'poster_url'),
     recap_link: str(formData, 'recap_link'),

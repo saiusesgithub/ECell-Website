@@ -49,8 +49,8 @@ const { data: registrations, error } = await supabaseAdmin
               <th class="px-4 py-3">Branch</th>
               <th class="px-4 py-3">Year</th>
               <th class="px-4 py-3">Team</th>
-              <th class="px-4 py-3">Payment transaction ID</th>
-              <th class="px-4 py-3">Payment</th>
+              {event.slug !== 'founders-expo-26' && <th class="px-4 py-3">Payment transaction ID</th>}
+              {event.slug !== 'founders-expo-26' && <th class="px-4 py-3">Payment</th>}
               <th class="px-4 py-3">Email delivery</th>
               <th class="px-4 py-3">Checked In</th>
               <th class="px-4 py-3">Registered</th>
@@ -77,31 +77,26 @@ const { data: registrations, error } = await supabaseAdmin
                     </details>
                   )}
                 </td>
-                <td class="px-4 py-3 text-gray-300">
+                {event.slug !== 'founders-expo-26' && <td class="px-4 py-3 text-gray-300">
                   {reg.extra_data?.payment_transaction_id ?? '—'}
-                  {reg.extra_data?.payment_screenshot_path && <a class="block text-xs text-red-300 hover:text-red-200 mt-1" href={`/console/actions/payment-screenshot?registrationId=${reg.id}`} target="_blank" rel="noopener noreferrer">View payment screenshot</a>}
-                </td>
-                <td class="px-4 py-3">
+                </td>}
+                {event.slug !== 'founders-expo-26' && <td class="px-4 py-3">
                   <button
                     class="toggle-payment-btn rounded-full px-3 py-1 text-xs font-medium border"
                     data-id={reg.id}
                     data-current={String(reg.payment_verified ?? false)}
-                    disabled={event.slug === 'founders-expo-26' && reg.payment_verified}
                     class:list={[
                       reg.payment_verified
                         ? 'bg-green-500/15 text-green-300 border-green-500/30'
                         : 'bg-white/5 text-gray-400 border-white/10',
                     ]}
                   >
-                    {reg.payment_verified ? 'Verified' : event.slug === 'founders-expo-26' ? 'Approve & email' : reg.payment_status ?? 'pending'}
+                    {reg.payment_verified ? 'Verified' : reg.payment_status ?? 'pending'}
                   </button>
-                </td>
+                </td>}
                 <td class="px-4 py-3 text-xs text-gray-400">
                   {event.slug === 'founders-expo-26' ? (
-                    <>
-                      <span class="block">Pending: {(reg.extra_data?.pending_email_sent_to ?? []).length}/{reg.extra_data?.team_size ?? 1}</span>
-                      <span class="block">Pass: {(reg.extra_data?.approved_email_sent_to ?? []).length}/{reg.extra_data?.team_size ?? 1}</span>
-                    </>
+                    <span class="block">Pass: {(reg.extra_data?.approved_email_sent_to ?? []).length}/{reg.extra_data?.team_size ?? 1}</span>
                   ) : reg.email_sent ? 'Ticket sent' : 'Not sent'}
                 </td>
                 <td class="px-4 py-3">
@@ -120,11 +115,8 @@ const { data: registrations, error } = await supabaseAdmin
                 </td>
                 <td class="px-4 py-3 text-gray-400 text-xs">{new Date(reg.created_at).toLocaleString('en-IN')}</td>
                 <td class="px-4 py-3">
-                  {event.slug === 'founders-expo-26' && !reg.payment_verified && (reg.extra_data?.pending_email_sent_to ?? []).length < (reg.extra_data?.team_size ?? 1) && (
-                    <button type="button" class="retry-expo-email-btn block text-red-300 hover:text-red-200 text-xs mb-2" data-id={reg.id} data-kind="pending">Retry pending email</button>
-                  )}
-                  {event.slug === 'founders-expo-26' && reg.payment_verified && (reg.extra_data?.approved_email_sent_to ?? []).length < (reg.extra_data?.team_size ?? 1) && (
-                    <button type="button" class="retry-expo-email-btn block text-red-300 hover:text-red-200 text-xs mb-2" data-id={reg.id} data-kind="approved">Retry pass email</button>
+                  {event.slug === 'founders-expo-26' && (reg.extra_data?.approved_email_sent_to ?? []).length < (reg.extra_data?.team_size ?? 1) && (
+                    <button type="button" class="retry-expo-email-btn block text-red-300 hover:text-red-200 text-xs mb-2" data-id={reg.id}>Retry pass email</button>
                   )}
                   <form method="POST" action="/console/actions/delete-registration" onsubmit="return confirm('Delete this registration? This cannot be undone.')">
                     <input type="hidden" name="registrationId" value={reg.id} />
@@ -136,7 +128,7 @@ const { data: registrations, error } = await supabaseAdmin
             ))}
             {(registrations ?? []).length === 0 && (
               <tr>
-                <td colspan="13" class="px-4 py-8 text-center text-gray-500">No registrations yet.</td>
+                <td colspan={event.slug === 'founders-expo-26' ? 11 : 13} class="px-4 py-8 text-center text-gray-500">No registrations yet.</td>
               </tr>
             )}
           </tbody>
@@ -202,7 +194,7 @@ const { data: registrations, error } = await supabaseAdmin
       try {
         const response = await fetch('/console/actions/retry-expo-email', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ registrationId: button.dataset.id, kind: button.dataset.kind }),
+          body: JSON.stringify({ registrationId: button.dataset.id }),
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error ?? 'Email retry failed.');
